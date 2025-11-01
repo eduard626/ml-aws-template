@@ -20,7 +20,7 @@ jobs:
      # MLFLOW_TRACKING_URI (e.g., http://your-mlflow-ec2-instance.com)
      # DVC_S3_REMOTE (e.g., s3://my-ml-bucket/dvc-storage)
      MLFLOW_EXPERIMENT_NAME: "my-production-experiment"
-     MLFLOW_MODEL_NAME: "${project.name}"
+     MLFLOW_MODEL_NAME: "${name}"
    steps:
      - checkout
      - aws-cli/setup // Setup AWS credentials
@@ -31,8 +31,8 @@ jobs:
            dvc remote add -d my_remote $DVC_S3_REMOTE
            # Auth is automatically picked up from env vars by boto3
     - run: { name: "Pull Data", command: "dvc pull" }
-    - run: { name: "Run Training", command: "python -m ${project.moduleName}.train" }
-    - run: { name: "Tag Model for Production", command: "python -m ${project.moduleName}.register_model --tag production-candidate" }
+    - run: { name: "Run Training", command: "python -m ${moduleName}.train" }
+    - run: { name: "Tag Model for Production", command: "python -m ${moduleName}.register_model --tag production-candidate" }
 
 build-and-push-docker-image:
    docker: [ { image: cimg/python:3.10 } ]

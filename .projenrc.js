@@ -97,12 +97,12 @@ new TextFile(project, '.env.example', {
 
 // --- CircleCI: AWS-Aware CI/CD Pipeline ---
 new TextFile(project, '.circleci/config.yml', {
-  lines: readTemplate('template_configs/circleci_config.yaml', { projectName: project.name, moduleName: project.moduleName }, true),
+  lines: readTemplate('template_configs/circleci_config.yaml', { name: project.name, moduleName: project.moduleName }, true),
 });
 
 // --- Dockerfile ---
 new TextFile(project, 'Dockerfile', {
-  lines: readTemplate('template_configs/Dockerfile', { moduleName: project.moduleName }, true),
+  lines: readTemplate('template_configs/Dockerfile', { moduleName: project.moduleName, name: project.name }, true),
 });
 
 // --- 3. SCAFFOLDING PYTHON SOURCE CODE (RECIPES) ---

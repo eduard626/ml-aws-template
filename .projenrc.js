@@ -113,32 +113,32 @@ new SampleFile(project, `src/${project.moduleName}/data/__init__.py`, { contents
 new SampleFile(project, `src/${project.moduleName}/model/__init__.py`, { contents: '' });
 
 // Add placeholders for other key modules
-new SampleFile(project, `src/${project.moduleName}/model/model.py`, {
+new TextFile(project, `src/${project.moduleName}/model/model.py`, {
   contents: readTemplate('src/model/model.py', { moduleName: project.moduleName }, true),
 });
-new SampleFile(project, `src/${project.moduleName}/data/datamodule.py`, {
+new TextFile(project, `src/${project.moduleName}/data/datamodule.py`, {
   contents: readTemplate('src/data/datamodule.py', { moduleName: project.moduleName }, true),
 });
 
-new SampleFile(project, `src/${project.moduleName}/register_model.py`, {
+new TextFile(project, `src/${project.moduleName}/register_model.py`, {
   contents: readTemplate('src/register_model.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
-new SampleFile(project, `src/${project.moduleName}/data/preprocess.py`, {
+new TextFile(project, `src/${project.moduleName}/data/preprocess.py`, {
   contents: readTemplate('src/data/preprocess.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
-new SampleFile(project, `src/${project.moduleName}/train.py`, {
+new TextFile(project, `src/${project.moduleName}/train.py`, {
   contents: readTemplate('src/train.py', { moduleName: project.moduleName }, true), // Uses external file for cleaner code
 });
 
 
-new SampleFile(project, `src/${project.moduleName}/export_and_benchmark.py`, {
+new TextFile(project, `src/${project.moduleName}/export_and_benchmark.py`, {
   contents: readTemplate('src/export_and_benchmark.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
 // Add placeholder for a simple test
-new SampleFile(project, `tests/test_basic.py`, {
+new TextFile(project, `tests/test_basic.py`, {
   contents: `
 def test_import():
     import ${project.moduleName}

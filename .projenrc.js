@@ -7,6 +7,7 @@ const path = require('path'); // Node's path module
 // Helper function to read external template files
 function readTemplate(filename, replacements = {}, asString = false) {
   const fullPath = path.resolve(filename); // resolves relative to project root
+  console.log('Reading template from:', fullPath);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Template file not found: ${fullPath}`);
   }

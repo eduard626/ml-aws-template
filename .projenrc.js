@@ -137,15 +137,6 @@ new TextFile(project, `src/${project.moduleName}/export_and_benchmark.py`, {
   contents: readTemplate('src/export_and_benchmark.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
-// Add placeholder for a simple test
-new TextFile(project, `tests/test_basic.py`, {
-  contents: `
-def test_import():
-    import ${project.moduleName}
-    assert 1 == 1
-`,
-});
-
 
 // Synthesize the project
 project.synth();

@@ -5,17 +5,16 @@ const fs = require('fs'); // Node's filesystem module to read external files
 const path = require('path'); // Node's path module
 
 // Helper function to read external template files
-function readTemplate(filename, replacements = {}) {
+function readTemplate(filename, replacements = {}, asString = false) {
   let content = fs.readFileSync(path.join('template_configs', filename), 'utf8');
-  // Perform dynamic string replacements
   for (const [key, value] of Object.entries(replacements)) {
     content = content.replace(new RegExp(`{{ ${key} }}`, 'g'), value);
   }
-  return content.split('\n');
+  return asString ? content : content.split('\n');
 }
 
 const project = new python.PythonProject({
-  authorName: process.env.AUTHOR_NAME | 'My Name',
+  authorName: process.env.AUTHOR_NAME || 'My Name',
   authorEmail: process.env.AUTHOR_MAIL | 'my-email@email.com',
   moduleName: process.env.MODULE_NAME || 'my_ml_project',
   name: process.env.PROJECT_NAME || 'my-ml-project',
@@ -87,27 +86,27 @@ new TextFile(project, '.gitattributes', {
 
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {
-  lines: readTemplate('dvc.yaml', { moduleName }),
+  lines: readTemplate('template_configs/dvc.yaml', { moduleName }, true),
 });
 
 // DVC/MLflow: Parameters file
 new TextFile(project, 'params.yaml', {
-  lines: readTemplate('params.yaml'),
+  lines: readTemplate('template_configs/params.yaml', {}, true),
 });
 
 // Example .env file for local development
 new TextFile(project, '.env.example', {
-  lines: readTemplate('environment.env'),
+  lines: readTemplate('template_configs/environment.env', {}, true),
 });
 
 // --- CircleCI: AWS-Aware CI/CD Pipeline ---
 new TextFile(project, '.circleci/config.yml', {
-  lines: readTemplate('circleci_config.yml', { projectName: project.name, moduleName }),
+  lines: readTemplate('template_configs/circleci_config.yml', { projectName: project.name, moduleName }, true),
 });
 
 // --- Dockerfile ---
 new TextFile(project, 'Dockerfile', {
-  lines: readTemplate('Dockerfile', { moduleName }),
+  lines: readTemplate('template_configs/Dockerfile', { moduleName }, true),
 });
 
 // --- 3. SCAFFOLDING PYTHON SOURCE CODE (RECIPES) ---
@@ -119,27 +118,27 @@ new SampleFile(project, `src/${moduleName}/model/__init__.py`, { contents: '' })
 
 // Add placeholders for other key modules
 new SampleFile(project, `src/${project.moduleName}/model/model.py`, {
-  contents: '# Placeholder for your PyTorch LightningModule',
+  contents: readTemplate('src/model/model.py', { moduleName }, true),
 });
 new SampleFile(project, `src/${project.moduleName}/data/datamodule.py`, {
-  contents: '# Placeholder for your PyTorch LightningDataModule',
+  contents: readTemplate('src/data/datamodule.py', { moduleName }, true),
 });
 
 new SampleFile(project, `src/${moduleName}/register_model.py`, {
-  contents: readTemplate('register_model.py', { moduleName }), // Uses external file
+  contents: readTemplate('src/register_model.py', { moduleName }, true), // Uses external file
 });
 
 new SampleFile(project, `src/${moduleName}/data/preprocess.py`, {
-  contents: readTemplate('data/preprocess.py', { moduleName }), // Uses external file
+  contents: readTemplate('src/data/preprocess.py', { moduleName }, true), // Uses external file
 });
 
 new SampleFile(project, `src/${moduleName}/train.py`, {
-  contents: readTemplate('train.py', { moduleName }), // Uses external file for cleaner code
+  contents: readTemplate('src/train.py', { moduleName }, true), // Uses external file for cleaner code
 });
 
 
 new SampleFile(project, `src/${moduleName}/export_and_benchmark.py`, {
-  contents: readTemplate('export_and_benchmark.py', { moduleName }), // Uses external file
+  contents: readTemplate('src/export_and_benchmark.py', { moduleName }, true), // Uses external file
 });
 
 // Add placeholder for a simple test

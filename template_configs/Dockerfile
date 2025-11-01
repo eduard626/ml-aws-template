@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code and DVC files
-COPY src/${project.moduleName} /app/${project.moduleName}
+COPY src/${moduleName} /app/${moduleName}
 COPY dvc.yaml params.yaml .dvcignore ./
 
 # Optional: Pull data in the remote training environment

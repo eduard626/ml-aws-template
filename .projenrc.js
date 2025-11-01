@@ -80,13 +80,9 @@ const project = new python.PythonProject({
 
 // --- Scaffolding Essential Config Files ---
 
-const moduleName = project.moduleName; // Convenience variable
-
-// project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
-
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {
-  lines: readTemplate('template_configs/dvc.yaml', { moduleName }, true),
+  lines: readTemplate('template_configs/dvc.yaml', { moduleName: project.moduleName }, true),
 });
 
 // DVC/MLflow: Parameters file
@@ -101,44 +97,44 @@ new TextFile(project, '.env.example', {
 
 // --- CircleCI: AWS-Aware CI/CD Pipeline ---
 new TextFile(project, '.circleci/config.yml', {
-  lines: readTemplate('template_configs/circleci_config.yaml', { projectName: project.name, moduleName }, true),
+  lines: readTemplate('template_configs/circleci_config.yaml', { projectName: project.name, moduleName: project.moduleName }, true),
 });
 
 // --- Dockerfile ---
 new TextFile(project, 'Dockerfile', {
-  lines: readTemplate('template_configs/Dockerfile', { moduleName }, true),
+  lines: readTemplate('template_configs/Dockerfile', { moduleName: project.moduleName }, true),
 });
 
 // --- 3. SCAFFOLDING PYTHON SOURCE CODE (RECIPES) ---
 
 // Base module and __init__ files
-new SampleFile(project, `src/${moduleName}/__init__.py`, { contents: '' });
-new SampleFile(project, `src/${moduleName}/data/__init__.py`, { contents: '' });
-new SampleFile(project, `src/${moduleName}/model/__init__.py`, { contents: '' });
+new SampleFile(project, `src/${project.moduleName}/__init__.py`, { contents: '' });
+new SampleFile(project, `src/${project.moduleName}/data/__init__.py`, { contents: '' });
+new SampleFile(project, `src/${project.moduleName}/model/__init__.py`, { contents: '' });
 
 // Add placeholders for other key modules
 new SampleFile(project, `src/${project.moduleName}/model/model.py`, {
-  contents: readTemplate('src/model/model.py', { moduleName }, true),
+  contents: readTemplate('src/model/model.py', { moduleName: project.moduleName }, true),
 });
 new SampleFile(project, `src/${project.moduleName}/data/datamodule.py`, {
-  contents: readTemplate('src/data/datamodule.py', { moduleName }, true),
+  contents: readTemplate('src/data/datamodule.py', { moduleName: project.moduleName }, true),
 });
 
-new SampleFile(project, `src/${moduleName}/register_model.py`, {
-  contents: readTemplate('src/register_model.py', { moduleName }, true), // Uses external file
+new SampleFile(project, `src/${project.moduleName}/register_model.py`, {
+  contents: readTemplate('src/register_model.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
-new SampleFile(project, `src/${moduleName}/data/preprocess.py`, {
-  contents: readTemplate('src/data/preprocess.py', { moduleName }, true), // Uses external file
+new SampleFile(project, `src/${project.moduleName}/data/preprocess.py`, {
+  contents: readTemplate('src/data/preprocess.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
-new SampleFile(project, `src/${moduleName}/train.py`, {
-  contents: readTemplate('src/train.py', { moduleName }, true), // Uses external file for cleaner code
+new SampleFile(project, `src/${project.moduleName}/train.py`, {
+  contents: readTemplate('src/train.py', { moduleName: project.moduleName }, true), // Uses external file for cleaner code
 });
 
 
-new SampleFile(project, `src/${moduleName}/export_and_benchmark.py`, {
-  contents: readTemplate('src/export_and_benchmark.py', { moduleName }, true), // Uses external file
+new SampleFile(project, `src/${project.moduleName}/export_and_benchmark.py`, {
+  contents: readTemplate('src/export_and_benchmark.py', { moduleName: project.moduleName }, true), // Uses external file
 });
 
 // Add placeholder for a simple test

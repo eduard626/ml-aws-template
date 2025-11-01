@@ -1,215 +1,195 @@
 #!/usr/bin/env python3
-"""
-bootstrap.py
-=============
-Bootstraps a new ML project from the projen-based ML AWS template.
-
-Usage:
-  python3 bootstrap.py --name my-new-project
-
-Requirements (must be on PATH):
-  - python3
-  - git
-  - npm (with npx)
-  - docker
-  - poetry
-"""
-
 import os
-import sys
 import shutil
 import subprocess
-import argparse
+import sys
+import re
 from pathlib import Path
 
-# --- Configuration ---
-SEED_REPO_URL = "https://github.com/eduard626/ml-aws-template.git"
+# --- Utility functions ---
+def run_command(cmd, cwd=None, env=None, allow_failure=False):
+    print(f"🚀 Running: {' '.join(cmd)}")
+    result = subprocess.run(cmd, cwd=cwd, env=env)
+    if result.returncode != 0:
+        if allow_failure:
+            print(f"⚠️  Command failed but continuing: {' '.join(cmd)}")
+            return False
+        print(f"❌ Error running command: {' '.join(cmd)}")
+        sys.exit(result.returncode)
+    return True
 
-PROJEN_GENERATED_FILES = [
-    # Node / Projen
-    "package.json",
-    "package-lock.json",
-
-    # Poetry-managed
-    "pyproject.toml",
-    "poetry.lock",
-
-    # Git & env files
-    ".gitattributes",
-    ".gitignore",
-    ".env.example",
-
-    # Config & pipelines
-    "dvc.yaml",
-    "params.yaml",
-    "Dockerfile",
-    ".circleci/config.yml",
-]
-# ----------------------
-
-
-def run_command(command, cwd=None, env=None, shell=False, quiet=False):
-    """Run a shell command and exit on failure."""
-    cmd_display = " ".join(command)
-    if not quiet:
-        print(f"\n🚀 Running: {cmd_display}")
-    try:
-        subprocess.run(
-            command,
-            cwd=cwd,
-            env=env,
-            check=True,
-            shell=shell,
-            stdout=None if not quiet else subprocess.DEVNULL,
-            stderr=None if not quiet else subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError:
-        print(f"\n❌ Command failed: {cmd_display}")
-        sys.exit(1)
-    except FileNotFoundError:
-        print(f"\n❌ Command not found: {command[0]}")
-        sys.exit(1)
-
-
-def get_git_config(key, default="unknown"):
-    """Get a global Git config value safely."""
-    try:
-        result = subprocess.run(
-            ["git", "config", "--global", key],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout.strip() or default
-    except subprocess.CalledProcessError:
-        print(f"⚠️  Git config for '{key}' not found, using default '{default}'")
-        return default
-
-
-def purge_generated_files(project_dir):
-    """Remove files that Projen will re-generate, including nested paths."""
-    print("🧹 Cleaning up pre-generated files...")
-    for filename in PROJEN_GENERATED_FILES:
-        filepath = project_dir / filename
-        if filepath.exists():
-            if filepath.is_file():
-                print(f"   -> Deleting file: {filename}")
-                filepath.unlink()
-            elif filepath.is_dir():
-                print(f"   -> Removing directory: {filename}")
-                shutil.rmtree(filepath)
+def clean_projen_files(project_dir):
+    """Remove Projen-managed files before reinitialization."""
+    files_to_remove = [
+        "package.json", "package-lock.json", ".gitattributes", ".gitignore",
+        "pyproject.toml", "poetry.lock", "requirements.txt", "setup.py",
+        "dvc.yaml", "params.yaml", ".env.example", "Dockerfile", 
+        ".circleci/config.yml",
+    ]
+    print("🗑️  Cleaning up Projen-managed files from project root...")
+    for f in files_to_remove:
+        target = Path(project_dir) / f
+        if target.exists():
+            target.unlink() if target.is_file() else shutil.rmtree(target)
+            print(f"   -> Removed {f}")
         else:
-            # Force removal for hidden files like .gitattributes
-            print(f"   -> File not found: {filename}, skipping (but checking hidden files)")
+            print(f"   -> Skipping {f} (not found)")
 
+def copy_template_scaffold(src_dir, dest_dir):
+    print("📁 Copying template scaffolding to project root...")
+    for item in os.listdir(src_dir):
+        s = os.path.join(src_dir, item)
+        d = os.path.join(dest_dir, item)
+        if os.path.isdir(s):
+            shutil.copytree(s, d, dirs_exist_ok=True)
+        else:
+            shutil.copy2(s, d)
 
-
-def check_prereqs():
-    """Ensure all required tools are installed."""
-    for tool in ["git", "npm", "npx", "docker", "poetry"]:
-        if shutil.which(tool) is None:
-            print(f"\n❌ Required tool '{tool}' not found on PATH.")
-            sys.exit(1)
-    print("✅ All required tools found.")
-
-
+# --- Main bootstrap logic ---
 def main():
-    parser = argparse.ArgumentParser(description="Bootstrap a new ML project from the template.")
-    parser.add_argument("-n", "--name", required=True, help="New project name (e.g., customer-churn-model)")
-    args = parser.parse_args()
+    project_dir = Path.cwd()
+    project_name = project_dir.name
+    print(f"--- Bootstrapping ML project in '{project_dir}' ---")
+    print(f"Project name: {project_name}, Module name: {project_name}")
 
-    project_name = args.name.strip()
-    module_name = project_name.replace("-", "_")
-    project_dir = Path(project_name).resolve()
+    # --- Check Docker ---
+    try:
+        subprocess.run(["docker", "--version"], check=True, stdout=subprocess.PIPE)
+        print("✅ Docker found.")
+    except Exception:
+        print("⚠️  Docker not found. Continuing without it.")
 
-    if project_dir.exists():
-        print(f"❌ Error: Directory '{project_name}' already exists.")
+    # --- Cleanup any old generated files ---
+    clean_projen_files(project_dir)
+
+    # --- Locate template directory (should be ml-aws-template submodule) ---
+    template_dir = project_dir / "ml-aws-template"
+    if not template_dir.exists():
+        print(f"❌ Template directory not found: {template_dir}")
+        print("   Make sure you've added this template as a submodule:")
+        print("   git submodule add https://github.com/eduard626/ml-aws-template.git ml-aws-template")
         sys.exit(1)
 
-    print(f"--- Bootstrapping new ML project: {project_name} ---")
-    check_prereqs()
-
-    # 1. Clone the seed repo
-    run_command(["git", "clone", SEED_REPO_URL, project_name])
-
-    # 2. Remove template git history
-    git_dir = project_dir / ".git"
-    if git_dir.exists():
-        print("🧹 Removing template Git history...")
-        shutil.rmtree(git_dir)
-
-    # 3. Clean up Projen-generated files
-    purge_generated_files(project_dir)
-
-    # 4. Prepare environment for Projen
-    env = os.environ.copy()
-    env["PROJECT_NAME"] = project_name
-    env["MODULE_NAME"] = module_name
-    env["AUTHOR_NAME"] = get_git_config("user.name", "ML Developer")
-    env["AUTHOR_MAIL"] = get_git_config("user.email", "ml@example.com")
-
-    # Ensure .gitattributes is gone
-    gitattributes_path = project_dir / ".gitattributes"
-    if gitattributes_path.exists():
-        print("🗑️ Removing pre-existing .gitattributes")
-        gitattributes_path.unlink()
-
-
-    print("📂 Files in project dir before Projen synthesis:")
-    for f in project_dir.iterdir():
-        print("  ", f.name)
-
-    # 5. Run Projen synthesis
-    print("\n🔨 Running Projen synthesis...")
-    run_command(["npx", "projen"], cwd=project_dir, env=env)
-
-    # 6. Install Node dependencies
-    print("\n📦 Installing Node dependencies...")
-    run_command(["npm", "install"], cwd=project_dir, env=env)
-
-    # 7. Install Python dependencies
-    print("\n🐍 Installing Poetry dependencies (including dev + s3_storage)...")
-    run_command([
-        "poetry",
-        "install",
-        "--with", "dev",
-        "--with", "s3_storage"
-    ], cwd=project_dir, env=env)
-
-    # 8. Append DVC filters to .gitattributes
-    gitattributes_file = project_dir / ".gitattributes"
-    dvc_line = "*.dvc filter=lfs diff=lfs merge=lfs -text\n"
-
-    if gitattributes_file.exists():
-        print("📝 Appending DVC filters to existing .gitattributes")
-        with open(gitattributes_file, "a") as f:
-            f.write(dvc_line)
+    # --- Verify required template directories exist ---
+    template_configs = template_dir / "template_configs"
+    template_src = template_dir / "src"
+    projenrc = template_dir / ".projenrc.js"
+    
+    if not template_configs.exists():
+        print(f"⚠️  Warning: template_configs not found in {template_dir}")
+    if not template_src.exists():
+        print(f"⚠️  Warning: src not found in {template_dir}")
+    
+    # --- Copy .projenrc.js to project root (required for projen to run) ---
+    if projenrc.exists():
+        dest_projenrc = project_dir / ".projenrc.js"
+        shutil.copy2(projenrc, dest_projenrc)
+        print(f"✅ Copied .projenrc.js to project root")
     else:
-        print("📝 Creating new .gitattributes with DVC filters")
-        with open(gitattributes_file, "w") as f:
-            f.write(dvc_line)
+        print(f"❌ .projenrc.js not found in {template_dir}")
+        sys.exit(1)
 
-    # 9. Initialize DVC and Git
-    print("\n🧠 Initializing DVC...")
-    run_command(["poetry", "run", "dvc", "init", "--no-scm"], cwd=project_dir, env=env)
+    # --- Run Projen synthesis ---
+    print("\n🔨 Running Projen synthesis...")
+    env = os.environ.copy()
+    # Set environment variable to prevent automatic dependency installation
+    env['SKIP_VENV_INSTALL'] = '1'
+    
+    # Install projen locally in the project (needed for node .projenrc.js)
+    print("   Installing projen locally...")
+    install_success = run_command(["npm", "init", "-y"], cwd=project_dir, env=env, allow_failure=True)
+    if install_success:
+        run_command(["npm", "install", "projen"], cwd=project_dir, env=env, allow_failure=True)
+    
+    # Use node directly to run .projenrc.js
+    # The .projenrc.js file will synthesize when run directly (see the conditional at the end)
+    # SKIP_VENV_INSTALL env var prevents automatic dependency installation
+    print("   Running projen synthesis via node (skipping dependency installation)...")
+    success = run_command(["node", ".projenrc.js"], cwd=project_dir, env=env, allow_failure=False)
+    
+    if success:
+        print("✅ Projen synthesis completed successfully")
+    
+    # Clean up node_modules and package files (not needed after synthesis)
+    print("   Cleaning up temporary files...")
+    for cleanup_item in ["node_modules", "package.json", "package-lock.json"]:
+        cleanup_path = project_dir / cleanup_item
+        if cleanup_path.exists():
+            if cleanup_path.is_dir():
+                shutil.rmtree(cleanup_path)
+            else:
+                cleanup_path.unlink()
+            print(f"      -> Removed {cleanup_item}")
+    
+    # Check if files were actually generated
+    required_files = ["dvc.yaml", "params.yaml", "Dockerfile", ".env.example", "requirements.txt", "setup.py"]
+    missing_required = [f for f in required_files if not (project_dir / f).exists()]
+    
+    if missing_required:
+        print(f"\n⚠️  Warning: Required files are missing: {', '.join(missing_required)}")
+        print("   This suggests projen synthesis may have failed before generating files.")
+        print("   Files should be generated even if dependency installation fails.")
+        print("\n   Attempting to diagnose the issue...")
+        
+        # Check if template files are accessible from the project root
+        for check_file in ["dvc.yaml", "params.yaml", "Dockerfile"]:
+            template_path = template_configs / check_file
+            if template_path.exists():
+                print(f"   ✅ Template accessible: {template_path}")
+            else:
+                print(f"   ❌ Template not found: {template_path}")
+        
+        print("\n   💡 Try running manually: node .projenrc.js")
+        print("      This will show the actual error preventing file generation.")
 
-    print("\n🔧 Initializing new Git repo...")
-    run_command(["git", "init"], cwd=project_dir)
-    run_command(["git", "config", "user.name", env["AUTHOR_NAME"]], cwd=project_dir)
-    run_command(["git", "config", "user.email", env["AUTHOR_MAIL"]], cwd=project_dir)
-    run_command(["git", "add", "."], cwd=project_dir)
-    run_command(["git", "commit", "-m", "Initial project bootstrap (via template)"], cwd=project_dir)
+    # No need to patch pyproject.toml - using pip means we control dependencies via requirements.txt
 
-    # 10. Summary
-    print("\n🎉 Success! Your new ML project is ready.")
-    print("\nNext steps:")
-    print(f"  1. cd {project_name}")
-    print("  2. poetry shell")
-    print("  3. git remote add origin https://github.com/your-org/{project_name}.git")
-    print("  4. git push -u origin main")
-    print("  5. dvc remote add -d my_remote s3://your-bucket/dvc-storage")
-    print("  6. Start coding 🚀")
+    # --- Verify expected structure ---
+    print("\n📁 Verifying project structure...")
+    expected_files = [
+        "requirements.txt",
+        "setup.py",
+        "Dockerfile",
+        "dvc.yaml",
+        "params.yaml",
+        ".env.example",
+        "src",
+    ]
+    
+    missing_files = []
+    for item in expected_files:
+        target = project_dir / item
+        if not target.exists():
+            missing_files.append(item)
+        else:
+            print(f"   ✅ {item}")
+    
+    if missing_files:
+        print(f"   ⚠️  Missing files: {', '.join(missing_files)}")
+    
+    # Verify template directory is intact
+    if (template_dir / ".projenrc.js").exists():
+        print(f"   ✅ ml-aws-template/ (template directory intact)")
+    else:
+        print(f"   ⚠️  Warning: ml-aws-template/ may have been modified")
 
+    # --- Done ---
+    print("\n🎉 Project bootstrapped successfully!")
+    print(f"\n📂 Project structure:")
+    print(f"   {project_dir}/")
+    print(f"   ├── ml-aws-template/        (template - unchanged)")
+    print(f"   ├── src/                    (generated Python code)")
+    print(f"   ├── requirements.txt        (generated - pip dependencies)")
+    print(f"   ├── setup.py                (generated - package setup)")
+    print(f"   ├── Dockerfile              (generated)")
+    print(f"   ├── dvc.yaml                (generated)")
+    print(f"   ├── params.yaml             (generated)")
+    print(f"   └── .env.example            (generated)")
+    print(f"\n💡 Next steps:")
+    print(f"   1. Install dependencies: pip install -r requirements.txt")
+    print(f"      Or install as package: pip install -e .")
+    print(f"   2. Review and customize the generated files")
+    print(f"   3. Start developing your ML project!")
 
 if __name__ == "__main__":
     main()

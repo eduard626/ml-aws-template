@@ -18,10 +18,14 @@ npm install -g projen
 ```
 
 ## Deploy
-
-Init the project with the template
+At the root of your new project, add this template as submodule
 ```
-python3 bootstrap.py --name "new-cool-project-name"
+git submodule add https://github.com/eduard626/ml-aws-template.git ml-aws-template
+```
+
+Run the boostrap script
+```
+python3 ml-aws-template/bootstrap.py --name "new-cool-project-name"
 ```
 
 The script ...

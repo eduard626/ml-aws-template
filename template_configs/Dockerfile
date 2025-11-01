@@ -1,18 +1,12 @@
 # Stage 1: Build/Install Dependencies
 FROM cuda/cuda:12.8.0-devel-ubuntu22.04 as builder 
-# Set environment variables for Poetry and Python
+# Set environment variables for Python
 ENV PYTHONUNBUFFERED=1
-ENV POETRY_VIRTUALENVS_CREATE=false
-ENV POETRY_CACHE_DIR="/tmp/poetry_cache"
 WORKDIR /app
 
-# Copy project metadata files
-COPY pyproject.toml poetry.lock ./
-
-# Install dependencies first (leverages cache layer)
-RUN pip install poetry
-# Use the specific groups required for training/runtime
-RUN poetry install --no-dev --with s3_storage
+# Copy requirements and install dependencies first (leverages cache layer)
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Final Runtime Image
 FROM cuda/cuda:12.8.0-runtime-ubuntu22.04

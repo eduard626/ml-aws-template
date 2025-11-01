@@ -82,27 +82,27 @@ const project = new python.PythonProject({
 
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {
-  lines: readTemplate('template_configs/dvc.yaml', { moduleName: project.moduleName }, true),
+  lines: readTemplate('template_configs/dvc.yaml', { moduleName: project.moduleName }, false),
 });
 
 // DVC/MLflow: Parameters file
 new TextFile(project, 'params.yaml', {
-  lines: readTemplate('template_configs/params.yaml', {}, true),
+  lines: readTemplate('template_configs/params.yaml', {}, false),
 });
 
 // Example .env file for local development
 new TextFile(project, '.env.example', {
-  lines: readTemplate('template_configs/environment.env', {}, true),
+  lines: readTemplate('template_configs/environment.env', {}, false),
 });
 
 // --- CircleCI: AWS-Aware CI/CD Pipeline ---
 new TextFile(project, '.circleci/config.yml', {
-  lines: readTemplate('template_configs/circleci_config.yaml', { name: project.name, moduleName: project.moduleName }, true),
+  lines: readTemplate('template_configs/circleci_config.yaml', { name: project.name, moduleName: project.moduleName }, false),
 });
 
 // --- Dockerfile ---
 new TextFile(project, 'Dockerfile', {
-  lines: readTemplate('template_configs/Dockerfile', { moduleName: project.moduleName, name: project.name }, true),
+  lines: readTemplate('template_configs/Dockerfile', { moduleName: project.moduleName, name: project.name }, false),
 });
 
 // --- 3. SCAFFOLDING PYTHON SOURCE CODE (RECIPES) ---
@@ -114,27 +114,36 @@ new TextFile(project, 'Dockerfile', {
 
 // Add placeholders for other key modules
 new TextFile(project, `src/${project.moduleName}/model/model.py`, {
-  contents: readTemplate('src/model/model.py', { moduleName: project.moduleName }, true),
+  contents: readTemplate('src/model/model.py', { moduleName: project.moduleName }, false),
 });
 new TextFile(project, `src/${project.moduleName}/data/datamodule.py`, {
-  contents: readTemplate('src/data/datamodule.py', { moduleName: project.moduleName }, true),
+  contents: readTemplate('src/data/datamodule.py', { moduleName: project.moduleName }, false),
 });
 
 new TextFile(project, `src/${project.moduleName}/register_model.py`, {
-  contents: readTemplate('src/register_model.py', { moduleName: project.moduleName }, true), // Uses external file
+  contents: readTemplate('src/register_model.py', { moduleName: project.moduleName }, false), // Uses external file
 });
 
 new TextFile(project, `src/${project.moduleName}/data/preprocess.py`, {
-  contents: readTemplate('src/data/preprocess.py', { moduleName: project.moduleName }, true), // Uses external file
+  contents: readTemplate('src/data/preprocess.py', { moduleName: project.moduleName }, false), // Uses external file
 });
 
 new TextFile(project, `src/${project.moduleName}/train.py`, {
-  contents: readTemplate('src/train.py', { moduleName: project.moduleName }, true), // Uses external file for cleaner code
+  contents: readTemplate('src/train.py', { moduleName: project.moduleName }, false), // Uses external file for cleaner code
 });
 
 
 new TextFile(project, `src/${project.moduleName}/export_and_benchmark.py`, {
-  contents: readTemplate('src/export_and_benchmark.py', { moduleName: project.moduleName }, true), // Uses external file
+  contents: readTemplate('src/export_and_benchmark.py', { moduleName: project.moduleName }, false), // Uses external file
+});
+
+// Add placeholder for a simple test
+new TextFile(project, `tests/test_basic.py`, {
+  contents: `
+def test_import():
+    import ${project.moduleName}
+    assert 1 == 1
+`,
 });
 
 

@@ -77,12 +77,12 @@ const project = new python.PythonProject({
 
 const moduleName = project.moduleName; // Convenience variable
 
-// DVC: .gitattributes
-new TextFile(project, '.gitattributes', {
-  lines: [
-    '*.dvc filter=lfs diff=lfs merge=lfs -text',
-  ],
-});
+console.log('Existing files:', project.files.map(f => f.path));
+const github = new projen.github.GitHub(project, { ... projen.github.GitHubOptions });
+
+console.log("Before custom .gitattributes logic, project.files includes:", project.files.map(f => f.path));
+
+// project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
 
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {

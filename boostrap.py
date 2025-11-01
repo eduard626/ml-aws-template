@@ -86,8 +86,8 @@ def get_git_config(key, default="unknown"):
         return default
 
 
-def purge_generated_files(project_dir: Path):
-    """Remove files that Projen will re-generate."""
+def purge_generated_files(project_dir):
+    """Remove files that Projen will re-generate, including nested paths."""
     print("🧹 Cleaning up pre-generated files...")
     for filename in PROJEN_GENERATED_FILES:
         filepath = project_dir / filename
@@ -99,7 +99,9 @@ def purge_generated_files(project_dir: Path):
                 print(f"   -> Removing directory: {filename}")
                 shutil.rmtree(filepath)
         else:
-            print(f"   -> Skipping {filename} (not found)")
+            # Force removal for hidden files like .gitattributes
+            print(f"   -> File not found: {filename}, skipping (but checking hidden files)")
+
 
 
 def check_prereqs():
@@ -146,6 +148,16 @@ def main():
     env["AUTHOR_NAME"] = get_git_config("user.name", "ML Developer")
     env["AUTHOR_MAIL"] = get_git_config("user.email", "ml@example.com")
 
+    # Ensure .gitattributes is gone
+    gitattributes_path = project_dir / ".gitattributes"
+    if gitattributes_path.exists():
+        print("🗑️ Removing pre-existing .gitattributes")
+        gitattributes_path.unlink()
+
+
+    print("📂 Files in project dir before Projen synthesis:")
+    for f in project_dir.iterdir():
+        print("  ", f.name)
     # 5. Run Projen synthesis
     print("\n🔨 Running Projen synthesis...")
     run_command(["npx", "projen"], cwd=project_dir, env=env)

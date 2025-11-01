@@ -3,7 +3,6 @@ const { python, TextFile, SampleFile } = require('projen');
 
 const fs = require('fs'); // Node's filesystem module to read external files
 const path = require('path'); // Node's path module
-const { python } = require('projen');
 
 // Helper function to read external template files
 function readTemplate(filename, replacements = {}, asString = false) {

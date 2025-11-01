@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+# bootstrap.py
+#
+# This script automates the creation of a new ML project from the projen-ml-aws-template.
+#
+# Requirements (must be on PATH):
+#   - python3
+#   - git
+#   - npm (which includes npx)
+#
+# Usage:
+#   python3 bootstrap.py --name "my-new-project-name"
+#
+
+import os
+import sys
+import subprocess
+import argparse
+import shutil
+from pathlib import Path
+
+# --- Configuration ---
+SEED_REPO_URL = "https://github.com/eduard626/ml-aws-template.git"
+# ---------------------
+
+def run_command(command, cwd=None, env=None, shell=False):
+    """Helper to run a shell command and exit on failure."""
+    print(f"\n🚀 Running: {' '.join(command)}")
+    try:
+        subprocess.run(
+            command, 
+            cwd=cwd, 
+            env=env, 
+            check=True, 
+            shell=shell,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"\n❌ Error encountered running command: {' '.join(command)}")
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"\n❌ Error: Command not found. Is '{command[0]}' installed and on your PATH?")
+        sys.exit(1)
+
+def get_git_config(key):
+    """Fetches a global git configuration value or a safe default."""
+    try:
+        result = subprocess.run(
+            ["git", "config", "--global", key],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return result.stdout.strip()
+    except Exception:
+        # Fallback for systems without global git config set
+        print(f"⚠️ Warning: Global Git config for '{key}' not found. Using default value.")
+        return "Projen User" if key == "user.name" else "user@example.com"
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Bootstrap a new ML project from the projen template."
+    )
+    parser.add_argument(
+        "-n",
+        "--name",
+        required=True,
+        help="The new project name (e.g., 'customer-churn-model')",
+    )
+    args = parser.parse_args()
+
+    project_name = args.name
+    module_name = project_name.replace("-", "_") # Convert 'foo-bar' to 'foo_bar'
+    project_dir = Path(project_name).resolve()
+
+    if project_dir.exists():
+        print(f"❌ Error: Directory '{project_name}' already exists.")
+        sys.exit(1)
+
+    # Pre-flight Check: Ensure Docker is installed
+    try:
+        # We don't need to print the output of the version check
+        subprocess.run(["docker", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("✅ Docker found on system.")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("\n❌ CRITICAL ERROR: The template requires Docker to build and deploy.")
+        print("Please install Docker and ensure it is running and accessible on your PATH.")
+        sys.exit(1)
+    
+    print(f"--- Bootstrapping new ML project: {project_name} ---")
+
+    # 1. Clone the seed repo
+    run_command(["git", "clone", SEED_REPO_URL, project_name])
+
+    # 2. CRITICAL: Remove the template's git history
+    git_dir = project_dir / ".git"
+    if git_dir.is_dir():
+        print(f"🧹 Removing template's Git history from {project_name}")
+        shutil.rmtree(git_dir)
+    
+    # 3. Set environment variables for projen
+    automation_env = os.environ.copy()
+    automation_env["PROJECT_NAME"] = project_name
+    automation_env["MODULE_NAME"] = module_name
+    automation_env["AUTHOR_NAME"] = get_git_config("user.name") # Fixed Author retrieval
+    automation_env["AUTHOR_MAIL"] = get_git_config("user.email") # Fixed Author retrieval
+
+    # 4. Run npm install
+    run_command(["npm", "install"], cwd=project_dir, env=automation_env)
+
+    # 5. Run npx projen to synthesize the project
+    run_command(["npx", "projen"], cwd=project_dir, env=automation_env)
+
+    print("\n✅ Projen synthesis complete. Setting up Python environment...")
+
+    # 6. Install Python dependencies
+    print("\n✅ Installing dependencies using Poetry...")
+    # Using `poetry install` handles both environment creation and package installation
+    run_command([
+        "poetry", 
+        "install", 
+        "--with", "dev", 
+        "--with", "s3_storage"
+    ], cwd=project_dir, env=automation_env)
+    
+    print("\n✅ Python environment setup complete. Initializing DVC and Git...")
+
+    # 7. Initialize DVC (must run before new git init or use --no-scm)
+    run_command(["poetry", "run", "dvc", "init", "--no-scm"], cwd=project_dir)
+
+    # 8. Initialize New Git Repository
+    run_command(["git", "init"], cwd=project_dir)
+    run_command(["git", "add", "."], cwd=project_dir)
+    run_command(["git", "commit", "-m", "Initial project bootstrap (via template)"], cwd=project_dir)
+
+    print("\n---")
+    print("🎉 Success! Your new project is ready.")
+    print(f"\nNext steps:")
+    print(f"  1. cd {project_name}")
+    print(f"  2. **poetry shell** (to enter the virtual environment)")
+    print(f"  3. **git remote add origin https://github.com/your-org/{project_name}.git**")
+    print(f"  4. **git push -u origin main**")
+    print("  5. dvc remote add -d my_remote s3://your-bucket/dvc-storage")
+    print("  6. Start coding!")
+
+if __name__ == "__main__":
+    main()

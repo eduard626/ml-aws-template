@@ -1,0 +1,86 @@
+version: 2.1
+orbs:
+  python: circleci/python@2.1.1
+  aws-cli: circleci/aws-cli@4.0.0 // AWS Orb
+
+jobs:
+ test:
+   docker: [ { image: cimg/python:3.10 } ]
+   steps:
+     - checkout
+     - python/install-dependencies: { pip-dependency-file: "requirements.txt" }
+     - python/install-dependencies: { pip-dependency-file: "requirements-dev.txt" }
+     - run: { name: "Run Tests", command: "pytest" }
+
+ train-and-register:
+   docker: [ { image: cimg/python:3.10 } ]
+   environment:
+     # Set these in CircleCI Project Settings:
+     # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+     # MLFLOW_TRACKING_URI (e.g., http://your-mlflow-ec2-instance.com)
+     # DVC_S3_REMOTE (e.g., s3://my-ml-bucket/dvc-storage)
+     MLFLOW_EXPERIMENT_NAME: "my-production-experiment"
+     MLFLOW_MODEL_NAME: "${project.name}"
+   steps:
+     - checkout
+     - aws-cli/setup // Setup AWS credentials
+     - python/install-dependencies: { pip-dependency-file: "requirements.txt" }
+     - run:
+         name: "Configure DVC (S3 Remote)"
+         command: |
+           dvc remote add -d my_remote $DVC_S3_REMOTE
+           # Auth is automatically picked up from env vars by boto3
+    - run: { name: "Pull Data", command: "dvc pull" }
+    - run: { name: "Run Training", command: "python -m ${project.moduleName}.train" }
+    - run: { name: "Tag Model for Production", command: "python -m ${project.moduleName}.register_model --tag production-candidate" }
+
+build-and-push-docker-image:
+   docker: [ { image: cimg/python:3.10 } ]
+   environment: { ... } # AWS credentials, region, etc.
+   steps:
+     - checkout
+     - aws-cli/setup
+     - run:
+         name: "Build Docker Image"
+         command: |
+           docker build -t $DOCKER_IMAGE_NAME .
+           docker push $DOCKER_IMAGE_NAME
+     - run:
+         name: "Login to Registry"
+         command: |
+           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+     - run:
+         name: "Tag Docker Image"
+         command: |
+           docker tag $DOCKER_IMAGE_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE_NAME
+
+     - run:
+         name: "Push Docker Image to Registry"
+         command: |
+           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE_NAME
+
+
+deploy-to-batch:
+   docker: [ { image: cimg/python:3.10 } ]
+   environment: { ... } # AWS credentials, region, etc.
+   steps:
+     - checkout
+     - aws-cli/setup
+     - run:
+         name: "Submit AWS Batch Job"
+         command: |
+           # Placeholder: Get latest model version from MLflow and submit
+           # You would replace this with your actual batch submission script
+           aws batch submit-job --job-name my-inference-job ...
+
+workflows:
+ main:
+   jobs:
+     - test
+     - train-and-register:
+         requires: [test]
+         filters: { branches: { only: [main, develop] } }
+     - deploy-to-batch:
+         requires: [train-and-register]
+         filters: { branches: { only: [main] } }

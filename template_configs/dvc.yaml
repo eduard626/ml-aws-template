@@ -1,0 +1,32 @@
+stages:
+  preprocess:
+    cmd: python -m ${project.moduleName}.data.preprocess
+    deps:
+      - ${project.moduleName}/data/preprocess.py
+      - data/raw/
+    outs:
+      - data/processed/
+  train:
+    cmd: python -m ${project.moduleName}.train
+    deps:
+      - ${project.moduleName}/train.py
+      - ${project.moduleName}/model/model.py
+      - ${project.moduleName}/data/datamodule.py
+      - data/processed/
+      - params.yaml
+    params:
+      - training
+    outs:
+      - models/model.ckpt:
+          cache: false
+  evaluate:
+    cmd: python -m ${project.moduleName}.evaluate
+    deps:
+      - ${project.moduleName}/evaluate.py
+      - models/model.ckpt
+      - data/processed/
+      - params.yaml
+    params:
+      - evaluation
+    outs:
+      - evaluation_results.json

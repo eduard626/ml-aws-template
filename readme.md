@@ -19,8 +19,10 @@ npm install -g projen
 
 ## Deploy
 
-# Init the project with the template
+Init the project with the template
+```
 python3 bootstrap.py --name "new-cool-project-name"
+```
 
 The script ...
 * 🚀 Clones the template

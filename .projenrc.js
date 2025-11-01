@@ -3,6 +3,7 @@ const { python, TextFile, SampleFile } = require('projen');
 
 const fs = require('fs'); // Node's filesystem module to read external files
 const path = require('path'); // Node's path module
+const { python } = require('projen');
 
 // Helper function to read external template files
 function readTemplate(filename, replacements = {}, asString = false) {
@@ -77,12 +78,7 @@ const project = new python.PythonProject({
 
 const moduleName = project.moduleName; // Convenience variable
 
-console.log('Existing files:', project.files.map(f => f.path));
-const github = new projen.github.GitHub(project, { ... projen.github.GitHubOptions });
-
-console.log("Before custom .gitattributes logic, project.files includes:", project.files.map(f => f.path));
-
-// project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
+project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
 
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {

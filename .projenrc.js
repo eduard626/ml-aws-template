@@ -96,7 +96,7 @@ new TextFile(project, '.env.example', {
 
 // --- CircleCI: AWS-Aware CI/CD Pipeline ---
 new TextFile(project, '.circleci/config.yml', {
-  lines: readTemplate('template_configs/circleci_config.yml', { projectName: project.name, moduleName }, true),
+  lines: readTemplate('template_configs/circleci_config.yaml', { projectName: project.name, moduleName }, true),
 });
 
 // --- Dockerfile ---

@@ -77,7 +77,7 @@ const project = new python.PythonProject({
 
 const moduleName = project.moduleName; // Convenience variable
 
-project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
+// project.gitAttributes.addAttributes('*.dvc filter=lfs diff=lfs merge=lfs -text');
 
 // DVC: Main pipeline definition
 new TextFile(project, 'dvc.yaml', {

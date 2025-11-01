@@ -158,6 +158,7 @@ def main():
     print("📂 Files in project dir before Projen synthesis:")
     for f in project_dir.iterdir():
         print("  ", f.name)
+
     # 5. Run Projen synthesis
     print("\n🔨 Running Projen synthesis...")
     run_command(["npx", "projen"], cwd=project_dir, env=env)
@@ -168,9 +169,27 @@ def main():
 
     # 7. Install Python dependencies
     print("\n🐍 Installing Poetry dependencies (including dev + s3_storage)...")
-    run_command(["poetry", "install", "--with", "dev", "--with", "s3_storage"], cwd=project_dir, env=env)
+    run_command([
+        "poetry",
+        "install",
+        "--with", "dev",
+        "--with", "s3_storage"
+    ], cwd=project_dir, env=env)
 
-    # 8. Initialize DVC and Git
+    # 8. Append DVC filters to .gitattributes
+    gitattributes_file = project_dir / ".gitattributes"
+    dvc_line = "*.dvc filter=lfs diff=lfs merge=lfs -text\n"
+
+    if gitattributes_file.exists():
+        print("📝 Appending DVC filters to existing .gitattributes")
+        with open(gitattributes_file, "a") as f:
+            f.write(dvc_line)
+    else:
+        print("📝 Creating new .gitattributes with DVC filters")
+        with open(gitattributes_file, "w") as f:
+            f.write(dvc_line)
+
+    # 9. Initialize DVC and Git
     print("\n🧠 Initializing DVC...")
     run_command(["poetry", "run", "dvc", "init", "--no-scm"], cwd=project_dir, env=env)
 
@@ -181,7 +200,7 @@ def main():
     run_command(["git", "add", "."], cwd=project_dir)
     run_command(["git", "commit", "-m", "Initial project bootstrap (via template)"], cwd=project_dir)
 
-    # 9. Summary
+    # 10. Summary
     print("\n🎉 Success! Your new ML project is ready.")
     print("\nNext steps:")
     print(f"  1. cd {project_name}")

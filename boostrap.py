@@ -106,11 +106,13 @@ def main():
     automation_env["AUTHOR_NAME"] = get_git_config("user.name") # Fixed Author retrieval
     automation_env["AUTHOR_MAIL"] = get_git_config("user.email") # Fixed Author retrieval
 
-    # 4. Run npm install
-    run_command(["npm", "install"], cwd=project_dir, env=automation_env)
-
-    # 5. Run npx projen to synthesize the project
+    # 4. Run npx projen to synthesize the project
+    print("\n🔨 Running Projen synthesis to generate project files...")
     run_command(["npx", "projen"], cwd=project_dir, env=automation_env)
+
+    # 5. Run npm install
+    print("\n📦 Installing Node dependencies (projen, etc.)...")
+    run_command(["npm", "install"], cwd=project_dir, env=automation_env)
 
     print("\n✅ Projen synthesis complete. Setting up Python environment...")
 

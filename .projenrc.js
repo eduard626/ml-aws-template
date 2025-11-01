@@ -6,7 +6,11 @@ const path = require('path'); // Node's path module
 
 // Helper function to read external template files
 function readTemplate(filename, replacements = {}, asString = false) {
-  let content = fs.readFileSync(filename, 'utf8');
+  const fullPath = path.resolve(filename); // resolves relative to project root
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Template file not found: ${fullPath}`);
+  }
+  let content = fs.readFileSync(fullPath, 'utf8');
   for (const [key, value] of Object.entries(replacements)) {
     content = content.replace(new RegExp(`{{ ${key} }}`, 'g'), value);
   }

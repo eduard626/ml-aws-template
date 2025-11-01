@@ -108,9 +108,9 @@ new TextFile(project, 'Dockerfile', {
 // --- 3. SCAFFOLDING PYTHON SOURCE CODE (RECIPES) ---
 
 // Base module and __init__ files
-new SampleFile(project, `src/${project.moduleName}/__init__.py`, { contents: '' });
-new SampleFile(project, `src/${project.moduleName}/data/__init__.py`, { contents: '' });
-new SampleFile(project, `src/${project.moduleName}/model/__init__.py`, { contents: '' });
+// new SampleFile(project, `src/${project.moduleName}/__init__.py`, { contents: '' });
+// new SampleFile(project, `src/${project.moduleName}/data/__init__.py`, { contents: '' });
+// new SampleFile(project, `src/${project.moduleName}/model/__init__.py`, { contents: '' });
 
 // Add placeholders for other key modules
 new TextFile(project, `src/${project.moduleName}/model/model.py`, {

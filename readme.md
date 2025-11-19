@@ -50,11 +50,13 @@ git init
 git submodule add https://github.com/eduard626/ml-aws-template.git .ml-aws-template
 ```
 
-### 3. Run the bootstrap script
+### 3. Run the bootstrap script (one-time setup)
 
 ```bash
 python3 .ml-aws-template/boostrap.py
 ```
+
+**Note:** Bootstrap is intended to be run **only once** for initial scaffolding. After bootstrap, you can freely edit `requirements.txt` and other files directly.
 
 The bootstrap script will:
 - ✅ Copy the template configuration to your project
@@ -64,6 +66,11 @@ The bootstrap script will:
 - ✅ Generate `requirements.txt` and `setup.py`
 - ✅ Create Dockerfile and CI/CD configurations
 - ✅ Set up environment variable templates
+
+If you need to re-run bootstrap (this will overwrite existing files):
+```bash
+python3 .ml-aws-template/boostrap.py --force
+```
 
 ### 4. Install dependencies
 
@@ -210,6 +217,23 @@ Key dependencies included:
 - `gitpython` - Git operations
 
 See `requirements.txt` for the complete list.
+
+### Managing Dependencies
+
+After bootstrap, you can manage dependencies in two ways:
+
+1. **Edit `requirements.txt` directly** (recommended for simple changes):
+   ```bash
+   # Add or remove packages directly
+   pip install new-package
+   pip freeze > requirements.txt  # Update with current environment
+   ```
+
+2. **Edit `.ml-aws-template/.projenrc.js` and regenerate** (if you want to keep using Projen):
+   ```bash
+   # Edit .ml-aws-template/.projenrc.js to add/remove from deps array
+   node .projenrc.js
+   ```
 
 ## CI/CD
 

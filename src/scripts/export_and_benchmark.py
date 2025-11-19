@@ -1,26 +1,31 @@
 
 import argparse
 import time
+import json
 import os
 import torch
 import onnxruntime
 import numpy as np
 from tqdm import tqdm
-import mlflow
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # --- Configuration ---
-MODEL_ARTIFACT_PATH = "model/model.ckpt"
+MODEL_CKPT_PATH = Path("models/model.ckpt")
 ONNX_FILE_NAME = "model.onnx"
+BENCHMARK_OUTPUT = "benchmark_results.json"
 # Define the size of your input tensor for tracing (e.g., 1 image, 1 channel, 28x28)
 DUMMY_INPUT_SIZE = (1, 1, 28, 28) 
 # ---------------------
 
-# --- Benchmarking Function (as previously defined) ---
+# --- Benchmarking Function ---
 def benchmark(model_runner, input_data, iterations=100, backend_name="Model"):
-    # ... (Benchmark logic remains the same) ...
     latencies = []
-    for _ in range(10): _ = model_runner(input_data) # Warm-up
+    for _ in range(10): 
+        _ = model_runner(input_data)  # Warm-up
 
     for _ in tqdm(range(iterations), desc=f"Benchmarking {backend_name}"):
         start = time.time()
@@ -30,42 +35,36 @@ def benchmark(model_runner, input_data, iterations=100, backend_name="Model"):
     mean_latency = np.mean(latencies) * 1000
     throughput = 1 / mean_latency * 1000
     return mean_latency, throughput
-# ------------------------------------------------------
 
 
-def run_export_and_benchmark(run_id: str):
-    # Setup MLflow client and download artifact
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-    
-    # 1. Download Checkpoint
-    local_dir = Path("./onnx_export_temp") / run_id
-    local_dir.mkdir(parents=True, exist_ok=True)
-    mlflow.artifacts.download_artifacts(
-        run_id=run_id, 
-        artifact_path=MODEL_ARTIFACT_PATH, 
-        dst_path=local_dir
-    )
-    checkpoint_path = local_dir / Path(MODEL_ARTIFACT_PATH).name
+def run_export_and_benchmark():
+    # 1. Load model checkpoint (local file)
+    if not MODEL_CKPT_PATH.exists():
+        raise FileNotFoundError(f"Model checkpoint not found: {MODEL_CKPT_PATH}")
     
     # 2. Load Model
     # 💡 REPLACE with your actual model class loading
-    # from {{ moduleName }}.model.model import SimpleClassifier 
-    # model = SimpleClassifier.load_from_checkpoint(checkpoint_path) 
+    # from ${moduleName}.model.model import SimpleClassifier 
+    # model = SimpleClassifier.load_from_checkpoint(str(MODEL_CKPT_PATH)) 
     # model.eval() 
     
     # Placeholder: Use a dummy model for tracing
     class DummyModel(torch.nn.Module):
-        def __init__(self): super().__init__(); self.linear = torch.nn.Linear(784, 10)
-        def forward(self, x): return self.linear(torch.flatten(x, 1))
+        def __init__(self): 
+            super().__init__()
+            self.linear = torch.nn.Linear(784, 10)
+        def forward(self, x): 
+            return self.linear(torch.flatten(x, 1))
+    
     model = DummyModel()
     model.eval()
     
     # 3. Export to ONNX
     dummy_input = torch.randn(DUMMY_INPUT_SIZE, requires_grad=False)
-    onnx_path = local_dir / ONNX_FILE_NAME
+    onnx_path = Path(ONNX_FILE_NAME)
     
     torch.onnx.export(
-        model, dummy_input, onnx_path, export_params=True, opset_version=17, 
+        model, dummy_input, str(onnx_path), export_params=True, opset_version=17, 
         input_names=['input'], output_names=['output'], 
         dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
     )
@@ -82,16 +81,25 @@ def run_export_and_benchmark(run_id: str):
         
     onnx_latency, onnx_throughput = benchmark(onnx_runner, dummy_input, backend_name="ONNX Runtime")
     
-    # 5. Log Results and Artifacts
-    with mlflow.start_run(run_id=run_id):
-        mlflow.log_metric("pt_latency_ms", pt_latency)
-        mlflow.log_metric("onnx_latency_ms", onnx_latency)
-        mlflow.log_artifact(str(onnx_path), artifact_path="model_onnx")
-        print("✅ ONNX model and metrics logged to MLflow.")
+    # 5. Save benchmark results to JSON
+    results = {
+        "pt_latency_ms": float(pt_latency),
+        "pt_throughput_qps": float(pt_throughput),
+        "onnx_latency_ms": float(onnx_latency),
+        "onnx_throughput_qps": float(onnx_throughput),
+        "speedup": float(pt_latency / onnx_latency) if onnx_latency > 0 else 0.0
+    }
+    
+    with open(BENCHMARK_OUTPUT, 'w') as f:
+        json.dump(results, f, indent=2)
+    
+    print(f"✅ Benchmark results saved to {BENCHMARK_OUTPUT}")
+    print(f"   PyTorch latency: {pt_latency:.2f} ms, throughput: {pt_throughput:.2f} qps")
+    print(f"   ONNX latency: {onnx_latency:.2f} ms, throughput: {onnx_throughput:.2f} qps")
+    print(f"   Speedup: {results['speedup']:.2f}x")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Export PyTorch model to ONNX and benchmark.")
-    parser.add_argument('--run-id', required=True, help='The MLflow Run ID containing the trained model.')
     args = parser.parse_args()
-    run_export_and_benchmark(args.run_id)
+    run_export_and_benchmark()

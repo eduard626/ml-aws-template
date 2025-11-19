@@ -1,0 +1,34 @@
+stages:
+  export_onnx:
+    cmd: python -m ${moduleName}.scripts.release export-onnx
+    deps:
+      - ${moduleName}/scripts/release.py
+      - ${moduleName}/model/model.py
+      - models/model.ckpt
+      - params.yaml
+    outs:
+      - releases/model.onnx
+      - releases/model_info.json
+    params:
+      - release
+
+  create_tag:
+    cmd: python -m ${moduleName}.scripts.release create-tag
+    deps:
+      - ${moduleName}/scripts/release.py
+      - releases/model_info.json
+    outs:
+      - releases/.git_tag_created
+    always_changed: true
+
+  upload_to_s3:
+    cmd: python -m ${moduleName}.scripts.release upload-s3
+    deps:
+      - ${moduleName}/scripts/release.py
+      - releases/model.onnx
+      - releases/model_info.json
+      - models/model.ckpt
+    outs:
+      - releases/.s3_upload_complete
+    always_changed: true
+

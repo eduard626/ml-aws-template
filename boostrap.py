@@ -62,12 +62,12 @@ def main():
     # --- Cleanup any old generated files ---
     clean_projen_files(project_dir)
 
-    # --- Locate template directory (should be ml-aws-template submodule) ---
-    template_dir = project_dir / "ml-aws-template"
+    # --- Locate template directory (should be .ml-aws-template submodule) ---
+    template_dir = project_dir / ".ml-aws-template"
     if not template_dir.exists():
         print(f"❌ Template directory not found: {template_dir}")
         print("   Make sure you've added this template as a submodule:")
-        print("   git submodule add https://github.com/eduard626/ml-aws-template.git ml-aws-template")
+        print("   git submodule add https://github.com/eduard626/ml-aws-template.git .ml-aws-template")
         sys.exit(1)
 
     # --- Verify required template directories exist ---
@@ -151,8 +151,10 @@ def main():
         "setup.py",
         "Dockerfile",
         "dvc.yaml",
+        "dvc-release.yaml",
         "params.yaml",
         ".env.example",
+        ".dvc/config",
         "src",
     ]
     
@@ -169,27 +171,31 @@ def main():
     
     # Verify template directory is intact
     if (template_dir / ".projenrc.js").exists():
-        print(f"   ✅ ml-aws-template/ (template directory intact)")
+        print(f"   ✅ .ml-aws-template/ (template directory intact)")
     else:
-        print(f"   ⚠️  Warning: ml-aws-template/ may have been modified")
+        print(f"   ⚠️  Warning: .ml-aws-template/ may have been modified")
 
     # --- Done ---
     print("\n🎉 Project bootstrapped successfully!")
     print(f"\n📂 Project structure:")
     print(f"   {project_dir}/")
-    print(f"   ├── ml-aws-template/        (template - unchanged)")
+    print(f"   ├── .ml-aws-template/       (template - unchanged, hidden)")
     print(f"   ├── src/                    (generated Python code)")
     print(f"   ├── requirements.txt        (generated - pip dependencies)")
     print(f"   ├── setup.py                (generated - package setup)")
     print(f"   ├── Dockerfile              (generated)")
-    print(f"   ├── dvc.yaml                (generated)")
+    print(f"   ├── dvc.yaml                (generated - training pipeline)")
+    print(f"   ├── dvc-release.yaml        (generated - release pipeline)")
     print(f"   ├── params.yaml             (generated)")
+    print(f"   ├── .dvc/config             (generated - S3 remote: s3://ml-data/dvcstore/{project_dir.name}/)")
     print(f"   └── .env.example            (generated)")
     print(f"\n💡 Next steps:")
     print(f"   1. Install dependencies: pip install -r requirements.txt")
     print(f"      Or install as package: pip install -e .")
-    print(f"   2. Review and customize the generated files")
-    print(f"   3. Start developing your ML project!")
+    print(f"   2. Configure AWS credentials (via AWS CLI, env vars, or IAM role)")
+    print(f"   3. Review and customize the generated files")
+    print(f"   4. Initialize DVC: dvc init (if not already done)")
+    print(f"   5. Start developing your ML project!")
 
 if __name__ == "__main__":
     main()

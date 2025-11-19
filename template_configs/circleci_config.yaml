@@ -17,10 +17,7 @@ jobs:
    environment:
      # Set these in CircleCI Project Settings:
      # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
-     # MLFLOW_TRACKING_URI (e.g., http://your-mlflow-ec2-instance.com)
      # DVC_S3_REMOTE (e.g., s3://my-ml-bucket/dvc-storage)
-     MLFLOW_EXPERIMENT_NAME: "my-production-experiment"
-     MLFLOW_MODEL_NAME: "${name}"
    steps:
      - checkout
      - aws-cli/setup // Setup AWS credentials
@@ -32,7 +29,7 @@ jobs:
            # Auth is automatically picked up from env vars by boto3
     - run: { name: "Pull Data", command: "dvc pull" }
     - run: { name: "Run Training", command: "python -m ${moduleName}.train" }
-    - run: { name: "Tag Model for Production", command: "python -m ${moduleName}.register_model --tag production-candidate" }
+    - run: { name: "Tag Model for Production", command: "python -m ${moduleName}.scripts.register_model --tag production-candidate" }
 
 build-and-push-docker-image:
    docker: [ { image: cimg/python:3.10 } ]
@@ -70,7 +67,7 @@ deploy-to-batch:
      - run:
          name: "Submit AWS Batch Job"
          command: |
-           # Placeholder: Get latest model version from MLflow and submit
+           # Placeholder: Get latest model version from S3 and submit
            # You would replace this with your actual batch submission script
            aws batch submit-job --job-name my-inference-job ...
 

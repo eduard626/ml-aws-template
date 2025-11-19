@@ -11,3 +11,9 @@ training:
 evaluation:
   batch_size: 32
   num_workers: 4
+
+release:
+  # Model release configuration
+  # Version will be auto-detected from git tags, or use 'dev-{commit_hash}'
+  # S3 bucket and prefix can be overridden via environment variables:
+  # MODEL_RELEASE_S3_BUCKET, MODEL_RELEASE_S3_PREFIX

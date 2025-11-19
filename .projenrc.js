@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // --- Paths ---
-const TEMPLATE_DIR = path.resolve('ml-aws-template'); // submodule
+const TEMPLATE_DIR = path.resolve('.ml-aws-template'); // submodule (hidden directory)
 const TEMPLATE_CONFIGS = path.join(TEMPLATE_DIR, 'template_configs');
 const TEMPLATE_SRC = path.join(TEMPLATE_DIR, 'src');
 
@@ -39,7 +39,7 @@ const project = new python.PythonProject({
     'torch',
     'torchvision',
     'torchmetrics',
-    'mlflow',
+    'tensorboard',
     'dvc[s3]',
     'boto3',
     'matplotlib',
@@ -64,7 +64,7 @@ const project = new python.PythonProject({
     'dvc:repro': { exec: 'dvc repro' },
   },
 
-  gitignore: ['data/', 'models/', 'notebooks/', 'mlruns/', '.dvc/cache', '*.DS_Store', '.env'],
+  gitignore: ['data/', 'models/', 'notebooks/', 'logs/', '.dvc/cache', '*.DS_Store', '.env', '.dvc/config.local', 'releases/'],
 });
 
 // Disable automatic dependency installation during bootstrap
@@ -152,8 +152,13 @@ new TextFile(project, 'setup.py', { lines: setupPyContent });
 // --- Config files ---
 try {
   new TextFile(project, 'dvc.yaml', { lines: readTemplate(path.join(TEMPLATE_CONFIGS, 'dvc.yaml'), { moduleName }) });
+  new TextFile(project, 'dvc-release.yaml', { lines: readTemplate(path.join(TEMPLATE_CONFIGS, 'dvc-release.yaml'), { moduleName }) });
   new TextFile(project, 'params.yaml', { lines: readTemplate(path.join(TEMPLATE_CONFIGS, 'params.yaml')) });
   new TextFile(project, '.env.example', { lines: readTemplate(path.join(TEMPLATE_CONFIGS, 'environment.env')) });
+  
+  // DVC config for S3 remote
+  // Note: .dvc/config is typically committed, while .dvc/config.local is gitignored
+  new TextFile(project, '.dvc/config', { lines: readTemplate(path.join(TEMPLATE_CONFIGS, 'dvc_config'), { projectName: project.name }) });
 
   new TextFile(project, '.circleci/config.yml', {
     lines: readTemplate(
@@ -183,14 +188,19 @@ function safeSampleFile(relPath, templateRelPath) {
 safeSampleFile(`src/${moduleName}/__init__.py`, '__init__.py');
 safeSampleFile(`src/${moduleName}/data/__init__.py`, 'data/__init__.py');
 safeSampleFile(`src/${moduleName}/model/__init__.py`, 'model/__init__.py');
+safeSampleFile(`src/${moduleName}/scripts/__init__.py`, 'scripts/__init__.py');
 
 // Core ML files
 safeSampleFile(`src/${moduleName}/model/model.py`, 'model/model.py');
 safeSampleFile(`src/${moduleName}/data/datamodule.py`, 'data/datamodule.py');
-safeSampleFile(`src/${moduleName}/register_model.py`, 'register_model.py');
 safeSampleFile(`src/${moduleName}/data/preprocess.py`, 'data/preprocess.py');
 safeSampleFile(`src/${moduleName}/train.py`, 'train.py');
-safeSampleFile(`src/${moduleName}/export_and_benchmark.py`, 'export_and_benchmark.py');
+safeSampleFile(`src/${moduleName}/eval.py`, 'eval.py');
+
+// Scripts (utility scripts)
+safeSampleFile(`src/${moduleName}/scripts/register_model.py`, 'scripts/register_model.py');
+safeSampleFile(`src/${moduleName}/scripts/export_and_benchmark.py`, 'scripts/export_and_benchmark.py');
+safeSampleFile(`src/${moduleName}/scripts/release.py`, 'scripts/release.py');
 
 // Simple test placeholder
 new SampleFile(project, `tests/test_basic.py`, {

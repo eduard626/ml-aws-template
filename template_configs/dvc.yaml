@@ -20,9 +20,10 @@ stages:
       - models/model.ckpt:
           cache: false
   evaluate:
-    cmd: python -m ${moduleName}.evaluate
+    cmd: python -m ${moduleName}.eval
     deps:
-      - ${moduleName}/evaluate.py
+      - ${moduleName}/eval.py
+      - ${moduleName}/model/model.py
       - models/model.ckpt
       - data/processed/
       - params.yaml

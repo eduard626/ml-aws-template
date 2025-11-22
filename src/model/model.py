@@ -2,11 +2,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 
 class SimpleClassifier(pl.LightningModule):
     """
-    A minimal PyTorch Lightning Module for classification.
+    A minimal Lightning Module for classification.
     """
     def __init__(self, lr: float = 1e-3, input_dim: int = 784, num_classes: int = 10):
         super().__init__()

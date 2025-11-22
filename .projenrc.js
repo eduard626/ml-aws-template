@@ -32,23 +32,23 @@ const project = new python.PythonProject({
   version: '0.1.0',
 
   // Set desired Python range
-  python: '>=3.9,<4.0',
+  python: '>=3.10,<4.0',
 
   deps: [
-    'pytorch-lightning',
-    'torch',
-    'torchvision',
-    'torchmetrics',
-    'tensorboard',
-    'dvc[s3]',
-    'boto3',
-    'matplotlib',
-    'numpy',
-    'tqdm',
-    'onnx',
-    'onnxruntime-gpu',
-    'python-dotenv',
-    'gitpython',
+    'lightning@^2.5.0',
+    'torch@2.7.1',
+    'torchvision@0.22.1',
+    'torchmetrics@^1.5.0',
+    'tensorboard@^2.18.0',
+    'dvc[s3]@^3.64.0',
+    'boto3@^1.35.0',
+    'matplotlib@^3.8.0',
+    'numpy@^1.26.0',
+    'tqdm@^4.66.0',
+    'onnx@^1.16.0',
+    'onnxruntime-gpu@^1.18.0',
+    'python-dotenv@^1.0.0',
+    'gitpython@^3.1.0',
   ],
 
   // Use Poetry for dependency management

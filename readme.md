@@ -1,10 +1,10 @@
 # ML AWS Template
 
-A template for machine learning projects on AWS, using PyTorch Lightning, DVC for data versioning, S3 for storage, and TensorBoard for experiment tracking.
+A template for machine learning projects on AWS, using Lightning (from Lightning AI), DVC for data versioning, S3 for storage, and TensorBoard for experiment tracking.
 
 ## Features
 
-- **PyTorch Lightning** for training and evaluation
+- **Lightning** (from Lightning AI) for training and evaluation
 - **DVC** for data versioning and pipeline management
 - **S3** for model and data storage
 - **TensorBoard** for local experiment tracking
@@ -218,7 +218,7 @@ Edit `params.yaml` to configure:
 
 Key dependencies included:
 
-- `pytorch-lightning` - Training framework
+- `lightning` - Training framework (from Lightning AI)
 - `torch`, `torchvision` - PyTorch
 - `tensorboard` - Experiment tracking (local)
 - `dvc[s3]` - Data version control with S3 support
@@ -261,6 +261,39 @@ After bootstrap, you can manage dependencies using Poetry:
    ```bash
    poetry export -f requirements.txt --output requirements.txt --without-hashes
    ```
+
+### PyTorch and CUDA Configuration
+
+The template is configured with:
+- **PyTorch version**: `2.7.1` (pinned)
+- **PyTorch source**: `https://download.pytorch.org/whl/cu128` (CUDA 12.8)
+- **Source priority**: `explicit` (only `torch` and `torchvision` use this source)
+
+The PyTorch source is configured with `explicit` priority, meaning only `torch` and `torchvision` packages will be fetched from it. All other packages (like `dvc`, `boto3`, etc.) are fetched from PyPI, avoiding unnecessary authorization errors.
+
+If you need a different CUDA version, you can update the PyTorch source URL in `pyproject.toml`:
+
+```toml
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu{version}"  # e.g., cu124, cu121, cu118
+priority = "explicit"
+```
+
+The `torch` and `torchvision` dependencies are already configured to use this source:
+```toml
+[tool.poetry.dependencies]
+torch = {version = "2.7.1", source = "pytorch"}
+torchvision = {version = "0.22.1", source = "pytorch"}
+```
+
+Available CUDA versions can be found at: https://download.pytorch.org/whl/
+
+After updating the source URL, run:
+```bash
+poetry lock
+poetry install
+```
 
 ## CI/CD
 

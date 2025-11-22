@@ -1,8 +1,8 @@
 """
-Utility functions for setting up PyTorch Lightning components.
+Utility functions for setting up Lightning components.
 """
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
+import lightning.pytorch as pl
+from lightning.pytorch.loggers import TensorBoardLogger
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -92,7 +92,7 @@ def create_trainer(
     accelerator: Optional[str] = None,
     devices: Optional[int] = None
 ) -> pl.Trainer:
-    """Create PyTorch Lightning Trainer.
+    """Create Lightning Trainer.
     
     Args:
         config: Configuration object

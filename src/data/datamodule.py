@@ -2,7 +2,7 @@
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 from pathlib import Path
 
 # --- Custom Dataset ---
@@ -27,7 +27,7 @@ class MyDataset(Dataset):
 # --- Lightning DataModule ---
 class MyDataModule(pl.LightningDataModule):
     """
-    Encapsulates all data loading steps for PyTorch Lightning.
+    Encapsulates all data loading steps for Lightning.
     """
     def __init__(self, data_dir: str = 'data/processed', batch_size: int = 32, num_workers: int = 4):
         super().__init__()

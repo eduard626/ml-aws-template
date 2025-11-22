@@ -28,7 +28,7 @@ Installation:
 sudo apt update
 
 # Install Node.js and npm
-sudo apt install nodejs npm
+sudo apt install nodejs npm 
 
 # Install Projen globally (for project generation)
 npm install -g projen
@@ -56,14 +56,14 @@ git submodule add https://github.com/eduard626/ml-aws-template.git .ml-aws-templ
 python3 .ml-aws-template/boostrap.py
 ```
 
-**Note:** Bootstrap is intended to be run **only once** for initial scaffolding. After bootstrap, you can freely edit `requirements.txt` and other files directly.
+**Note:** Bootstrap is intended to be run **only once** for initial scaffolding. After bootstrap, you can freely edit `pyproject.toml` and other files directly.
 
 The bootstrap script will:
 - ✅ Copy the template configuration to your project
 - ✅ Generate project structure with Python source code
 - ✅ Create DVC pipeline configurations (`dvc.yaml`, `dvc-release.yaml`)
 - ✅ Set up S3 remote configuration for DVC
-- ✅ Generate `requirements.txt` and `setup.py`
+- ✅ Generate `pyproject.toml` (Poetry configuration)
 - ✅ Create Dockerfile and CI/CD configurations
 - ✅ Set up environment variable templates
 
@@ -72,12 +72,22 @@ If you need to re-run bootstrap (this will overwrite existing files):
 python3 .ml-aws-template/boostrap.py --force
 ```
 
-### 4. Install dependencies
+### 4. Install Poetry (if not already installed)
 
 ```bash
-pip install -r requirements.txt
-# Or install as an editable package:
-pip install -e .
+curl -sSL https://install.python-poetry.org | python3 -
+# Add Poetry to PATH (add to ~/.bashrc or ~/.zshrc):
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### 5. Install dependencies
+
+```bash
+poetry install
+# Activate Poetry shell:
+poetry shell
+# Or run commands with Poetry:
+poetry run python -m my_project.train
 ```
 
 ### 5. Configure AWS credentials
@@ -117,8 +127,8 @@ my-new-ml-project/
 ├── dvc.yaml                  # Main DVC pipeline (preprocess → train → evaluate)
 ├── dvc-release.yaml          # Release pipeline (export → tag → upload)
 ├── params.yaml               # DVC parameters
-├── requirements.txt          # Python dependencies
-├── setup.py                  # Package setup
+├── pyproject.toml            # Poetry dependencies and package config
+├── poetry.lock               # Locked dependency versions (generated)
 ├── Dockerfile                # Docker image for training
 ├── .dvc/config               # DVC S3 remote configuration
 └── .env.example              # Environment variables template
@@ -216,23 +226,40 @@ Key dependencies included:
 - `onnx`, `onnxruntime-gpu` - ONNX export and inference
 - `gitpython` - Git operations
 
-See `requirements.txt` for the complete list.
+See `pyproject.toml` for the complete list.
 
 ### Managing Dependencies
 
-After bootstrap, you can manage dependencies in two ways:
+After bootstrap, you can manage dependencies using Poetry:
 
-1. **Edit `requirements.txt` directly** (recommended for simple changes):
+1. **Add a dependency**:
    ```bash
-   # Add or remove packages directly
-   pip install new-package
-   pip freeze > requirements.txt  # Update with current environment
+   poetry add package-name
+   # For development dependencies:
+   poetry add --group dev package-name
    ```
 
-2. **Edit `.ml-aws-template/.projenrc.js` and regenerate** (if you want to keep using Projen):
+2. **Remove a dependency**:
    ```bash
-   # Edit .ml-aws-template/.projenrc.js to add/remove from deps array
-   node .projenrc.js
+   poetry remove package-name
+   ```
+
+3. **Update dependencies**:
+   ```bash
+   poetry update  # Update all dependencies
+   poetry update package-name  # Update specific package
+   ```
+
+4. **Edit `pyproject.toml` directly** (Poetry will sync on next install):
+   ```bash
+   # Edit pyproject.toml, then run:
+   poetry lock  # Update poetry.lock
+   poetry install  # Install changes
+   ```
+
+5. **Export to requirements.txt** (if needed for other tools):
+   ```bash
+   poetry export -f requirements.txt --output requirements.txt --without-hashes
    ```
 
 ## CI/CD

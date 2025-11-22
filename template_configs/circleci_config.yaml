@@ -8,9 +8,17 @@ jobs:
    docker: [ { image: cimg/python:3.10 } ]
    steps:
      - checkout
-     - python/install-dependencies: { pip-dependency-file: "requirements.txt" }
-     - python/install-dependencies: { pip-dependency-file: "requirements-dev.txt" }
-     - run: { name: "Run Tests", command: "pytest" }
+     - run:
+         name: "Install Poetry"
+         command: |
+           curl -sSL https://install.python-poetry.org | python3 -
+           export PATH="$HOME/.local/bin:$PATH"
+     - run:
+         name: "Install Dependencies"
+         command: |
+           export PATH="$HOME/.local/bin:$PATH"
+           poetry install
+     - run: { name: "Run Tests", command: "poetry run pytest" }
 
  train-and-register:
    docker: [ { image: cimg/python:3.10 } ]
@@ -21,15 +29,25 @@ jobs:
    steps:
      - checkout
      - aws-cli/setup // Setup AWS credentials
-     - python/install-dependencies: { pip-dependency-file: "requirements.txt" }
+     - run:
+         name: "Install Poetry"
+         command: |
+           curl -sSL https://install.python-poetry.org | python3 -
+           export PATH="$HOME/.local/bin:$PATH"
+     - run:
+         name: "Install Dependencies"
+         command: |
+           export PATH="$HOME/.local/bin:$PATH"
+           poetry install --no-dev
      - run:
          name: "Configure DVC (S3 Remote)"
          command: |
-           dvc remote add -d my_remote $DVC_S3_REMOTE
+           export PATH="$HOME/.local/bin:$PATH"
+           poetry run dvc remote add -d my_remote $DVC_S3_REMOTE
            # Auth is automatically picked up from env vars by boto3
-    - run: { name: "Pull Data", command: "dvc pull" }
-    - run: { name: "Run Training", command: "python -m ${moduleName}.train" }
-    - run: { name: "Tag Model for Production", command: "python -m ${moduleName}.scripts.register_model --tag production-candidate" }
+    - run: { name: "Pull Data", command: "poetry run dvc pull" }
+    - run: { name: "Run Training", command: "poetry run python -m ${moduleName}.train" }
+    - run: { name: "Tag Model for Production", command: "poetry run python -m ${moduleName}.scripts.register_model --tag production-candidate" }
 
 build-and-push-docker-image:
    docker: [ { image: cimg/python:3.10 } ]

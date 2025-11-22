@@ -2,11 +2,18 @@
 FROM cuda/cuda:12.8.0-devel-ubuntu22.04 as builder 
 # Set environment variables for Python
 ENV PYTHONUNBUFFERED=1
+ENV POETRY_NO_INTERACTION=1
+ENV POETRY_VENV_IN_PROJECT=1
+ENV POETRY_CACHE_DIR=/tmp/poetry_cache
+
 WORKDIR /app
 
-# Copy requirements and install dependencies first (leverages cache layer)
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Poetry
+RUN pip install --no-cache-dir poetry
+
+# Copy Poetry files and install dependencies first (leverages cache layer)
+COPY pyproject.toml poetry.lock* ./
+RUN poetry install --no-dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # Stage 2: Final Runtime Image
 FROM cuda/cuda:12.8.0-runtime-ubuntu22.04
@@ -15,9 +22,10 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copy only the necessary packages from the builder stage
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
+# Copy Poetry virtual environment from builder stage
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
 # Copy application code and DVC files
 COPY src/${moduleName} /app/${moduleName}
 COPY dvc.yaml params.yaml .dvcignore ./

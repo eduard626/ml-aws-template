@@ -29,7 +29,7 @@ def register_model(tag: str):
             check=True
         )
         commit_hash = result.stdout.strip()
-        
+
         # Create a git tag for this model version
         tag_name = f"model-{tag}-{commit_hash[:8]}"
         

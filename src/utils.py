@@ -42,10 +42,15 @@ def create_datamodule(config: Config, stage: str = "fit") -> MyDataModule:
     else:
         params = config.training
     
+    image_size = config.data.get('image_size', (28, 28))
+    if isinstance(image_size, list):
+        image_size = tuple(image_size)
+
     dm = MyDataModule(
         data_dir='data/processed',
         batch_size=params.get('batch_size', 32),
-        num_workers=params.get('num_workers', 4)
+        num_workers=params.get('num_workers', 4),
+        image_size=image_size,
     )
     dm.setup(stage)
     return dm
@@ -53,24 +58,24 @@ def create_datamodule(config: Config, stage: str = "fit") -> MyDataModule:
 
 def create_model(config: Config, checkpoint_path: Optional[str] = None) -> SimpleClassifier:
     """Create model instance.
-    
+
     Args:
         config: Configuration object
         checkpoint_path: Optional path to checkpoint for loading
-        
+
     Returns:
         Model instance
     """
     training_params = config.training
-    input_dim = config.compute_input_dim()
+    num_channels = config.data.get('num_channels', 1)
     num_classes = config.data.get('num_classes', 10)
-    
+
     if checkpoint_path and Path(checkpoint_path).exists():
         # Load from checkpoint
         model = SimpleClassifier.load_from_checkpoint(
             checkpoint_path,
             lr=training_params.get('lr', 0.001),
-            input_dim=input_dim,
+            num_channels=num_channels,
             num_classes=num_classes
         )
         model.eval()
@@ -78,10 +83,10 @@ def create_model(config: Config, checkpoint_path: Optional[str] = None) -> Simpl
         # Create new model
         model = SimpleClassifier(
             lr=training_params.get('lr', 0.001),
-            input_dim=input_dim,
+            num_channels=num_channels,
             num_classes=num_classes
         )
-    
+
     return model
 
 

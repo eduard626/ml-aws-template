@@ -64,10 +64,11 @@ class Config:
         return value if value is not None else default
     
     def compute_input_dim(self) -> int:
-        """Compute input dimension from data config.
-        
+        """Compute flattened input dimension from data config.
+
         Returns:
-            Computed input dimension (image_size[0] * image_size[1] * num_channels)
+            Computed input dimension (image_size[0] * image_size[1] * num_channels).
+            Useful for MLP-based architectures; CNN models typically don't need this.
         """
         image_size = self.data.get('image_size', (28, 28))
         num_channels = self.data.get('num_channels', 1)

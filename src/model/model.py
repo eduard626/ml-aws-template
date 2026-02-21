@@ -6,24 +6,34 @@ import lightning.pytorch as pl
 
 class SimpleClassifier(pl.LightningModule):
     """
-    A minimal Lightning Module for classification.
-    This is a placeholder 2-layer MLP — replace it with your own architecture.
+    A minimal Lightning Module for image classification.
+    This is a placeholder CNN — replace it with your own architecture.
     """
-    def __init__(self, lr: float = 1e-3, input_dim: int = 784, num_classes: int = 10):
+    def __init__(self, lr: float = 1e-3, num_channels: int = 1, num_classes: int = 10):
         super().__init__()
-        # Saves lr, input_dim, and num_classes to self.hparams for checkpointing
+        # Saves lr, num_channels, and num_classes to self.hparams for checkpointing
         self.save_hyperparameters()
 
         # TODO: Replace these layers with your architecture
-        self.layer_1 = nn.Linear(input_dim, 128)
-        self.layer_2 = nn.Linear(128, num_classes)
+        self.features = nn.Sequential(
+            nn.Conv2d(num_channels, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+            nn.Linear(64, num_classes),
+        )
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, x):
         # TODO: Update forward pass to match your architecture
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.layer_1(x))
-        x = self.layer_2(x)
+        x = self.features(x)
+        x = self.classifier(x)
         return x
 
     def training_step(self, batch, batch_idx):

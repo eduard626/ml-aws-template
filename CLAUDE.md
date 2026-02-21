@@ -53,7 +53,7 @@ tensorboard --logdir logs
 ### Pipeline Flow
 
 ```
-data/raw/ → preprocess → data/processed/ (Parquet)
+data/raw/ → preprocess → data/processed/ (ImageFolder layout)
                               ↓
                            train → models/model.ckpt + TensorBoard logs/
                               ↓
@@ -64,12 +64,12 @@ data/raw/ → preprocess → data/processed/ (Parquet)
 
 ### Source Structure (`src/`)
 
-- **`config.py`** — Loads `params.yaml`, provides dot-notation access to config sections (data, training, evaluation, release). Computes derived values like input dimension from image_size and channels.
+- **`config.py`** — Loads `params.yaml`, provides dot-notation access to config sections (data, training, evaluation, release).
 - **`utils.py`** — Factory functions: `setup_logger()`, `create_datamodule()`, `create_model()`, `create_trainer()`. These are the shared setup used by both `train.py` and `eval.py`.
 - **`train.py`** — Entry point for training. Creates datamodule/model/trainer via utils, saves checkpoint to `models/model.ckpt`.
 - **`eval.py`** — Entry point for evaluation. Loads checkpoint, runs test set, saves metrics JSON.
-- **`model/model.py`** — `SimpleClassifier` (Lightning Module): 2-layer neural net with `save_hyperparameters()`.
-- **`data/datamodule.py`** — `MyDataModule` (Lightning DataModule): loads Parquet from `data/processed/`, handles train/val/test splits.
+- **`model/model.py`** — `SimpleClassifier` (Lightning Module): simple CNN with `save_hyperparameters()`.
+- **`data/datamodule.py`** — `MyDataModule` (Lightning DataModule): loads images via torchvision ImageFolder from `data/processed/`, handles train/val/test splits and transforms.
 - **`data/preprocess.py`** — Data preprocessing stub (raw → processed).
 - **`scripts/release.py`** — 3-stage release: ONNX export, git tag creation, S3 upload to `s3://bucket/models/{project}/{version}/`.
 - **`scripts/register_model.py`** — Git-based model versioning with annotated tags (`model-{tag}-{commit_hash}`).

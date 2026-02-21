@@ -97,8 +97,8 @@ After bootstrap and `poetry install`, you have working infrastructure (DVC pipel
 
 | File | What to do |
 |------|------------|
-| `src/{module_name}/data/preprocess.py` | Read from `data/raw/`, write train/val/test Parquet files to `data/processed/` |
-| `src/{module_name}/data/datamodule.py` | Load your Parquet files in `MyDataset.__init__()`, set `self.features` and `self.targets` as tensors |
+| `src/{module_name}/data/preprocess.py` | Read from `data/raw/`, organize images into `data/processed/{train,val,test}/<class>/` (ImageFolder layout) |
+| `src/{module_name}/data/datamodule.py` | Adjust transforms and data augmentation in `default_train_transforms()` / `default_eval_transforms()` |
 | `src/{module_name}/model/model.py` | Replace the placeholder 2-layer MLP with your architecture |
 | `params.yaml` | Adjust hyperparameters (image_size, num_classes, batch_size, lr, max_epochs) to match your data |
 

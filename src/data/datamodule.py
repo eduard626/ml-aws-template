@@ -5,7 +5,7 @@ import lightning.pytorch as pl
 from pathlib import Path
 
 
-def default_train_transforms(image_size: tuple = (28, 28)):
+def default_train_transforms(image_size: tuple = (224, 224)):
     """Default training transforms with data augmentation.
 
     TODO: Adjust augmentation to match your dataset (e.g., larger crops,
@@ -20,7 +20,7 @@ def default_train_transforms(image_size: tuple = (28, 28)):
     ])
 
 
-def default_eval_transforms(image_size: tuple = (28, 28)):
+def default_eval_transforms(image_size: tuple = (224, 224)):
     """Default evaluation transforms (no augmentation)."""
     return transforms.Compose([
         transforms.Resize(image_size),
@@ -41,7 +41,7 @@ class MyDataModule(pl.LightningDataModule):
         data/processed/test/<class_name>/*.{png,jpg,...}
     """
     def __init__(self, data_dir: str = 'data/processed', batch_size: int = 32,
-                 num_workers: int = 4, image_size: tuple = (28, 28)):
+                 num_workers: int = 4, image_size: tuple = (224, 224)):
         super().__init__()
         self.data_dir = Path(data_dir)
         self.batch_size = batch_size

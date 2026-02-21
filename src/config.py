@@ -70,8 +70,11 @@ class Config:
             Computed input dimension (image_size[0] * image_size[1] * num_channels).
             Useful for MLP-based architectures; CNN models typically don't need this.
         """
-        image_size = self.data.get('image_size', (28, 28))
+        image_size = self.data.get('image_size', [224, 224])
         num_channels = self.data.get('num_channels', 1)
+        if isinstance(image_size, str):
+            # Handle Python tuple syntax "(28, 28)" written in YAML
+            image_size = tuple(int(x.strip()) for x in image_size.strip("()").split(","))
         if isinstance(image_size, (list, tuple)) and len(image_size) >= 2:
             return image_size[0] * image_size[1] * num_channels
         return 784 * num_channels  # Default 28x28x1

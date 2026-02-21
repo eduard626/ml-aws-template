@@ -1,17 +1,20 @@
 stages:
   preprocess:
-    cmd: python -m ${moduleName}.data.preprocess
+    cmd: poetry run python -m ${moduleName}.data.preprocess
     deps:
-      - ${moduleName}/data/preprocess.py
-      - data/raw/
+      - src/${moduleName}/data/preprocess.py
+      # data/raw/ is not listed as a dep because it must be added manually
+      # the first time. After adding raw data, you can uncomment the line below
+      # to let DVC track changes to it:
+      # - data/raw/
     outs:
       - data/processed/
   train:
-    cmd: python -m ${moduleName}.train
+    cmd: poetry run python -m ${moduleName}.train
     deps:
-      - ${moduleName}/train.py
-      - ${moduleName}/model/model.py
-      - ${moduleName}/data/datamodule.py
+      - src/${moduleName}/train.py
+      - src/${moduleName}/model/model.py
+      - src/${moduleName}/data/datamodule.py
       - data/processed/
       - params.yaml
     params:
@@ -20,10 +23,10 @@ stages:
       - models/model.ckpt:
           cache: false
   evaluate:
-    cmd: python -m ${moduleName}.eval
+    cmd: poetry run python -m ${moduleName}.eval
     deps:
-      - ${moduleName}/eval.py
-      - ${moduleName}/model/model.py
+      - src/${moduleName}/eval.py
+      - src/${moduleName}/model/model.py
       - models/model.ckpt
       - data/processed/
       - params.yaml

@@ -1,13 +1,16 @@
 data:
-  image_size: (28, 28)
+  image_size: [224, 224]
   num_classes: 10
-  num_channels: 1
-  
+  num_channels: 3
+
 training:
   batch_size: 32
   lr: 0.001
   max_epochs: 10
   num_workers: 4
+  # Tip: If you hit GPU OOM errors, reduce batch_size or image_size first.
+  # Large models (e.g. detection, segmentation) may need batch_size: 2-4.
+
 evaluation:
   batch_size: 32
   num_workers: 4

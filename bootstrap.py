@@ -41,7 +41,7 @@ def clean_generated_files(project_dir):
     files_to_remove = [
         ".gitignore", "pyproject.toml", "poetry.lock",
         "dvc.yaml", "dvc-release.yaml", "params.yaml", ".env.example",
-        "Dockerfile", ".circleci/config.yml", ".dvc/config",
+        "Dockerfile", "docker_build.sh", ".circleci/config.yml", ".dvc/config",
     ]
     print("  Cleaning up generated files from project root...")
     for f in files_to_remove:
@@ -78,14 +78,27 @@ boto3 = "^1.35.0"
 matplotlib = "^3.8.0"
 numpy = "^1.26.0"
 tqdm = "^4.66.0"
-onnx = "^1.16.0"
-onnxruntime-gpu = "^1.18.0"
 python-dotenv = "^1.0.0"
 gitpython = "^3.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 ruff = "^0.9.0"
+
+[tool.poetry.group.export]
+optional = true
+
+[tool.poetry.group.export.dependencies]
+onnx = "^1.16.0"
+onnxruntime = "^1.18.0"
+
+[tool.poetry.group.cv]
+optional = true
+
+[tool.poetry.group.cv.dependencies]
+timm = "^1.0.0"
+albumentations = "^2.0.0"
+pycocotools = "^2.0.0"
 
 [tool.ruff]
 line-length = 120
@@ -234,6 +247,7 @@ def main():
         "dvc_config": ".dvc/config",
         "circleci_config.yaml": ".circleci/config.yml",
         "Dockerfile": "Dockerfile",
+        "docker_build.sh": "docker_build.sh",
     }
 
     for template_name, dest_name in config_file_map.items():
@@ -244,6 +258,12 @@ def main():
             print(f"    {dest_name}")
         else:
             print(f"    Warning: template not found: {template_name}")
+
+    # Make shell scripts executable
+    for script in ["docker_build.sh"]:
+        script_path = project_dir / script
+        if script_path.exists():
+            script_path.chmod(0o755)
 
     # --- Copy Python source files ---
     print("\n  Copying Python source files...")
@@ -306,6 +326,7 @@ def main():
         "pyproject.toml",
         ".gitignore",
         "Dockerfile",
+        "docker_build.sh",
         "dvc.yaml",
         "dvc-release.yaml",
         "params.yaml",
@@ -336,6 +357,7 @@ def main():
     print(f"    tests/                   (generated test files)")
     print(f"    pyproject.toml           (Poetry dependencies + ruff + pytest config)")
     print(f"    Dockerfile               (CUDA 12.8 multi-stage build)")
+    print(f"    docker_build.sh          (export requirements + docker build)")
     print(f"    dvc.yaml                 (training pipeline)")
     print(f"    dvc-release.yaml         (release pipeline)")
     print(f"    params.yaml              (hyperparameters)")
@@ -347,6 +369,10 @@ def main():
     print(f"    1. Install Poetry if not already installed:")
     print(f"       curl -sSL https://install.python-poetry.org | python3 -")
     print(f"    2. Install dependencies: poetry install")
+    print(f"       Optional groups (install as needed):")
+    print(f"         poetry install --with export    # ONNX export (onnx, onnxruntime)")
+    print(f"         poetry install --with cv        # CV extras (timm, albumentations, pycocotools)")
+    print(f"       Add your own deps: poetry add <package>")
     print(f"    3. Implement your code (look for TODO comments):")
     print(f"       a. src/{module_name}/data/preprocess.py  — raw images -> train/val/test splits")
     print(f"       b. src/{module_name}/data/datamodule.py  — load images as tensors")

@@ -4,7 +4,6 @@ import time
 import json
 import os
 import torch
-import onnxruntime
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
@@ -17,8 +16,8 @@ load_dotenv()
 MODEL_CKPT_PATH = Path("models/model.ckpt")
 ONNX_FILE_NAME = "model.onnx"
 BENCHMARK_OUTPUT = "benchmark_results.json"
-# Define the size of your input tensor for tracing (e.g., 1 image, 1 channel, 28x28)
-DUMMY_INPUT_SIZE = (1, 1, 28, 28) 
+# Define the size of your input tensor for tracing (e.g., 1 image, 3 channels, 224x224)
+DUMMY_INPUT_SIZE = (1, 3, 224, 224)
 # ---------------------
 
 # --- Benchmarking Function ---
@@ -62,6 +61,13 @@ def run_export_and_benchmark():
     torch_runner = lambda x: model(x).cpu().detach().numpy()
     pt_latency, pt_throughput = benchmark(torch_runner, dummy_input, backend_name="PyTorch")
     
+    try:
+        import onnxruntime
+    except ImportError:
+        raise ImportError(
+            "onnxruntime is not installed. Install the export dependencies with:\n"
+            "  poetry install --with export"
+        )
     ort_session = onnxruntime.InferenceSession(str(onnx_path))
     def onnx_runner(x):
         ort_inputs = {ort_session.get_inputs()[0].name: x.cpu().numpy()}

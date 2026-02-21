@@ -9,7 +9,7 @@ class SimpleClassifier(pl.LightningModule):
     A minimal Lightning Module for image classification.
     This is a placeholder CNN — replace it with your own architecture.
     """
-    def __init__(self, lr: float = 1e-3, num_channels: int = 1, num_classes: int = 10):
+    def __init__(self, lr: float = 1e-3, num_channels: int = 3, num_classes: int = 10):
         super().__init__()
         # Saves lr, num_channels, and num_classes to self.hparams for checkpointing
         self.save_hyperparameters()

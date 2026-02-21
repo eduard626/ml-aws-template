@@ -42,8 +42,11 @@ def create_datamodule(config: Config, stage: str = "fit") -> MyDataModule:
     else:
         params = config.training
     
-    image_size = config.data.get('image_size', (28, 28))
-    if isinstance(image_size, list):
+    image_size = config.data.get('image_size', [224, 224])
+    if isinstance(image_size, str):
+        # Handle Python tuple syntax "(28, 28)" written in YAML
+        image_size = tuple(int(x.strip()) for x in image_size.strip("()").split(","))
+    elif isinstance(image_size, list):
         image_size = tuple(image_size)
 
     dm = MyDataModule(
@@ -67,7 +70,7 @@ def create_model(config: Config, checkpoint_path: Optional[str] = None) -> Simpl
         Model instance
     """
     training_params = config.training
-    num_channels = config.data.get('num_channels', 1)
+    num_channels = config.data.get('num_channels', 3)
     num_classes = config.data.get('num_classes', 10)
 
     if checkpoint_path and Path(checkpoint_path).exists():

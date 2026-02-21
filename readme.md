@@ -89,6 +89,47 @@ Configure AWS credentials using one of these methods:
 dvc init
 ```
 
+## Getting Started with Development
+
+After bootstrap and `poetry install`, you have working infrastructure (DVC pipelines, Docker, CI/CD, config management) but **stub code** that needs your implementation. Here's what to work on and in what order.
+
+### Files to customize (in order)
+
+| File | What to do |
+|------|------------|
+| `src/{module_name}/data/preprocess.py` | Read from `data/raw/`, write train/val/test Parquet files to `data/processed/` |
+| `src/{module_name}/data/datamodule.py` | Load your Parquet files in `MyDataset.__init__()`, set `self.features` and `self.targets` as tensors |
+| `src/{module_name}/model/model.py` | Replace the placeholder 2-layer MLP with your architecture |
+| `params.yaml` | Adjust hyperparameters (image_size, num_classes, batch_size, lr, max_epochs) to match your data |
+
+### Files to leave alone
+
+These are already wired up and don't need changes for most projects:
+
+- `config.py`, `utils.py` — config loading and factory functions
+- `train.py`, `eval.py` — training and evaluation entry points (use utils factories)
+- `dvc.yaml`, `dvc-release.yaml` — pipeline definitions
+- `Dockerfile`, `.circleci/config.yml` — build and CI/CD
+
+### Verify your setup
+
+```bash
+# 1. Run smoke tests (should pass without any data)
+poetry run pytest
+
+# 2. Implement preprocess.py, then run it
+dvc repro -s preprocess
+
+# 3. Implement datamodule.py and model.py, then train
+dvc repro -s train
+
+# 4. Check training in TensorBoard
+tensorboard --logdir logs
+
+# 5. Run the full pipeline end-to-end
+dvc repro
+```
+
 ## Project Structure
 
 After bootstrapping, your project will have the following structure:
@@ -304,12 +345,12 @@ The Dockerfile uses a multi-stage build with CUDA support for GPU training.
 
 ## Next Steps
 
-1. **Customize your model**: Update `src/{module_name}/model/model.py`
-2. **Configure data loading**: Update `src/{module_name}/data/datamodule.py`
-3. **Adjust training logic**: Modify `src/{module_name}/train.py`
-4. **Set up your data**: Add data to `data/raw/` and configure preprocessing
-5. **Configure AWS**: Set up S3 buckets and IAM permissions
-6. **Run experiments**: Use TensorBoard to track your training runs
+See **Getting Started with Development** above for the files to implement first. Once your pipeline runs end-to-end (`dvc repro`):
+
+1. **Track data with DVC**: `dvc add data/raw/` and push to S3 with `dvc push`
+2. **Configure AWS**: Set up S3 buckets and IAM permissions (see `.env.example`)
+3. **Release a model**: `dvc repro -f dvc-release.yaml` to export ONNX, tag, and upload to S3
+4. **Set up CI/CD**: Configure CircleCI environment variables in your project settings
 
 ## License
 

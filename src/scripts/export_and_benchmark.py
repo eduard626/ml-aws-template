@@ -43,20 +43,8 @@ def run_export_and_benchmark():
         raise FileNotFoundError(f"Model checkpoint not found: {MODEL_CKPT_PATH}")
     
     # 2. Load Model
-    # 💡 REPLACE with your actual model class loading
-    # from ${moduleName}.model.model import SimpleClassifier 
-    # model = SimpleClassifier.load_from_checkpoint(str(MODEL_CKPT_PATH)) 
-    # model.eval() 
-    
-    # Placeholder: Use a dummy model for tracing
-    class DummyModel(torch.nn.Module):
-        def __init__(self): 
-            super().__init__()
-            self.linear = torch.nn.Linear(784, 10)
-        def forward(self, x): 
-            return self.linear(torch.flatten(x, 1))
-    
-    model = DummyModel()
+    from ${moduleName}.model.model import SimpleClassifier
+    model = SimpleClassifier.load_from_checkpoint(str(MODEL_CKPT_PATH))
     model.eval()
     
     # 3. Export to ONNX

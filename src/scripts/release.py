@@ -43,23 +43,14 @@ def export_to_onnx():
     print("🔄 Exporting model to ONNX...")
     
     # Load model checkpoint
-    # TODO: Replace with your actual model class
-    # Uncomment and adjust the import path:
-    # from ${moduleName}.model.model import SimpleClassifier
-    # model = SimpleClassifier.load_from_checkpoint(str(MODEL_CKPT_PATH))
-    # model.eval()
-    
-    # Placeholder: Load a dummy model for now
-    # In production, uncomment and use your actual model class
-    class DummyModel(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.linear = torch.nn.Linear(784, 10)
-        
-        def forward(self, x):
-            return self.linear(torch.flatten(x, 1))
-    
-    model = DummyModel()
+    if not MODEL_CKPT_PATH.exists():
+        raise FileNotFoundError(
+            f"Checkpoint not found at {MODEL_CKPT_PATH}. "
+            "Run training first: dvc repro -s train"
+        )
+
+    from ${moduleName}.model.model import SimpleClassifier
+    model = SimpleClassifier.load_from_checkpoint(str(MODEL_CKPT_PATH))
     model.eval()
     
     # Load params for input shape

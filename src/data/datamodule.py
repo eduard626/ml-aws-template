@@ -1,4 +1,3 @@
-# src/{{ moduleName }}/data/datamodule.py
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -11,12 +10,13 @@ class MyDataset(Dataset):
     A simple Dataset for loading Parquet files processed by the DVC stage.
     """
     def __init__(self, file_path: Path):
+        # TODO: Load your Parquet file with pd.read_parquet(file_path),
+        #       then set self.features and self.targets as torch tensors.
         print(f"Loading dataset from {file_path}")
-        self.data = None
-        self.targets = None
-        self.features = None
+        self.data = None  # <- Replace: pd.read_parquet(file_path)
+        self.targets = None  # <- Replace: torch.tensor(self.data["label"].values)
+        self.features = None  # <- Replace: torch.tensor(self.data.drop("label", axis=1).values, dtype=torch.float32)
         print(f"Dataset loaded from {file_path}")
-        # TODO: Implement dataset loading logic
 
     def __len__(self):
         return len(self.data)
@@ -83,7 +83,7 @@ class MyDataModule(pl.LightningDataModule):
 # Example Usage (optional, for local testing)
 if __name__ == '__main__':
     # This only works if you have run the DVC 'preprocess' stage first!
-    # from {{ moduleName }}.train import train
+    # from ${moduleName}.train import train
     # train() # Run the DVC train stage to generate data/processed/
     
     # dm = MyDataModule()

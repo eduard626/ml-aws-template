@@ -347,12 +347,13 @@ def main():
     print(f"    1. Install Poetry if not already installed:")
     print(f"       curl -sSL https://install.python-poetry.org | python3 -")
     print(f"    2. Install dependencies: poetry install")
-    print(f"    3. Activate Poetry shell: poetry shell")
-    print(f"       Or run commands with: poetry run <command>")
-    print(f"    4. Configure AWS credentials (via AWS CLI, env vars, or IAM role)")
-    print(f"    5. Review and customize the generated files")
-    print(f"    6. Initialize DVC: dvc init (if not already done)")
-    print(f"    7. Start developing your ML project!")
+    print(f"    3. Implement your code (look for TODO comments):")
+    print(f"       a. src/{module_name}/data/preprocess.py  — raw data -> Parquet")
+    print(f"       b. src/{module_name}/data/datamodule.py  — load Parquet as tensors")
+    print(f"       c. src/{module_name}/model/model.py      — your model architecture")
+    print(f"    4. Adjust params.yaml to match your data and model")
+    print(f"    5. Run the full pipeline: dvc repro")
+    print(f"    6. View training metrics: tensorboard --logdir logs")
 
 
 if __name__ == "__main__":

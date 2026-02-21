@@ -15,24 +15,8 @@ A template for machine learning projects on AWS, using Lightning (from Lightning
 
 ## Prerequisites
 
-The following software is required for this template to work:
-
-- **Python 3.9+**
-- **Node.js and npm** (for Projen)
+- **Python 3.10+**
 - **Git**
-
-Installation:
-
-```bash
-# Update package info (Ubuntu/Debian)
-sudo apt update
-
-# Install Node.js and npm
-sudo apt install nodejs npm 
-
-# Install Projen globally (for project generation)
-npm install -g projen
-```
 
 ## Quick Start
 
@@ -53,7 +37,7 @@ git submodule add https://github.com/eduard626/ml-aws-template.git .ml-aws-templ
 ### 3. Run the bootstrap script (one-time setup)
 
 ```bash
-python3 .ml-aws-template/boostrap.py
+python3 .ml-aws-template/bootstrap.py
 ```
 
 **Note:** Bootstrap is intended to be run **only once** for initial scaffolding. After bootstrap, you can freely edit `pyproject.toml` and other files directly.
@@ -63,13 +47,14 @@ The bootstrap script will:
 - ✅ Generate project structure with Python source code
 - ✅ Create DVC pipeline configurations (`dvc.yaml`, `dvc-release.yaml`)
 - ✅ Set up S3 remote configuration for DVC
-- ✅ Generate `pyproject.toml` (Poetry configuration)
+- ✅ Generate `pyproject.toml` (Poetry configuration with ruff and pytest)
 - ✅ Create Dockerfile and CI/CD configurations
 - ✅ Set up environment variable templates
+- ✅ Generate test files (`tests/test_basic.py`, `tests/test_model.py`)
 
 If you need to re-run bootstrap (this will overwrite existing files):
 ```bash
-python3 .ml-aws-template/boostrap.py --force
+python3 .ml-aws-template/bootstrap.py --force
 ```
 
 ### 4. Install Poetry (if not already installed)
@@ -90,7 +75,7 @@ poetry shell
 poetry run python -m my_project.train
 ```
 
-### 5. Configure AWS credentials
+### 6. Configure AWS credentials
 
 Configure AWS credentials using one of these methods:
 
@@ -98,7 +83,7 @@ Configure AWS credentials using one of these methods:
 - **Environment variables**: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
 - **IAM roles**: If running on EC2/ECS
 
-### 6. Initialize DVC (if not already done)
+### 7. Initialize DVC (if not already done)
 
 ```bash
 dvc init
